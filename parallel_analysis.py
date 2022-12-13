@@ -20,9 +20,9 @@ def main():
     nums_sim = 10000
     d_procs_sim = 5
     nums_subprocs_sim = 10
-    simulator = dimers_sim.Simulator(L=L_sim, times=times_sim, d=d_sim, nums=nums_sim, d_procs_num=d_procs_sim, nums_subprocs_num = nums_subprocs_sim)
+    simulator = dimers_sim.Simulator(local = False,L=L_sim, times=times_sim, d=d_sim, nums=nums_sim, d_procs_num=d_procs_sim, nums_subprocs_num = nums_subprocs_sim)
     simulator.parallel_analysis()
-    dimers_sim.plot_analysis(simulator.analysis_rhos, d_sim, L_sim, times_sim, nums_sim)
+    # dimers_sim.plot_analysis(simulator.analysis_rhos, d_sim, L_sim, times_sim, nums_sim)
 if __name__ == '__main__':
 	main()
 
