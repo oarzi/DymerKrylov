@@ -1,6 +1,6 @@
 import pickle
 from dimers_util import *
-from multiprocessing import Pool, SimpleQueue, Process, Semaphore
+from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
@@ -99,19 +99,20 @@ class Simulator:
     nums : int
     prob : int = 1
     local: bool = True
-    d_procs_num : 1
-    nums_subprocs_num : 1
+    d_procs_num : int = 1
+    nums_subprocs_num : int = 1
     
     def __post_init__(self):
         self.analysis_rhos = []
 
     def progress_bar(self, iterable):
-        return tqdm(iterable, miniters= self.times//100) if self.local else iterable
+        return tqdm(iterable, miniters= self.times//25) if self.local else iterable
     
     def parallel_analysis(self):
         H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
         print(len(H['H_ring']), len(H['H_hopp']))
-        queue = SimpleQueue()
+        manager = Manager()
+        queue = manager.Queue()
         sema = Semaphore(self.d_procs_num)
         ds = self.d.copy()
         procs = []
@@ -121,16 +122,21 @@ class Simulator:
             p = Process(target=self.classical_evolution, args=(H, curr_d, queue, sema),daemon=False)
             procs.append(p)
             p.start()
-
+        
+        print("Waiting for all processes to close")
+        print("{} items waiting".format(queue.qsize()))
         while procs:
             curr_p = procs.pop(0)
             if curr_p.is_alive():
-                curr_p.join()
+                p.join()
                 curr_p.close()
+
+        print("All processes closed")
+        print("{} items waiting".format(queue.qsize()))
         
         while not queue.empty():
             self.analysis_rhos.append(queue.get())
-        queue.close()
+
         with open('analyses/analysis_L{}_t{}_d{}.pickle'.format(self.L, self.times, time.strftime("%Y_%m_%d_%H_%M")), 'wb') as handle:
             pickle.dump(self.analysis_rhos, handle)
         return self.analysis_rhos
@@ -139,17 +145,19 @@ class Simulator:
         print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, self.d, self.nums))
         start = time.process_time()
         with Pool(self.nums_subprocs_num) as p:
-            c_rhos =  p.starmap(self.classical_evolutions_nums, ((H, _d) for i in range(2)), chunksize=1)
+            c_rhos =  p.starmap(self.classical_evolutions_nums, ((H, _d) for i in range(self.nums_subprocs_num)), chunksize=1)
             p.close()
             p.join()
         
         rho = np.array(c_rhos)
-        rho = np.sum(rho, axis=1)/self.nums
+        print("before batch sum", rho.shape)
+        rho = np.sum(rho, axis=0)/self.nums
+        print("after batch sum", rho.shape)
         
         analyzed = self.analyze(rho)
         analyzed['d'] = _d
-        q.put(analyzed)     
-        print("Elapsed time during the {} in seconds: {}".format(os.getpid(), time.process_time() - start)) 
+        q.put(analyzed, False)     
+        print("Elapsed time during pid {} in seconds: {}".format(os.getpid(), time.process_time() - start)) 
         sema.release()
         return 0
 
@@ -170,13 +178,16 @@ class Simulator:
             gates_i = np.random.choice(allgates, size=self.nums, p=p_array)
             psi_next = np.array(list(map(apply, zip(gates_i, psi[-1]))))
             psi = np.vstack((psi, [psi_next]))
-
-        rho = np.apply_along_axis(defect_density, 2 , psi)
-        rho = np.sum(rho, axis=1)
         
+        print("{} before= {}".format(os.getpid(), psi.shape))
+        rho = np.apply_along_axis(defect_density, 2 , psi)
+        print("charge=", rho.shape)
+        rho = np.sum(rho, axis=1)
+        print("after", rho.shape)
         return rho
 
     def analyze(self, rho):
+        print("Analysis start")
         analysis = {}
         analysis['rho'] = rho
         analysis['Median'] = 1 + np.sum((np.cumsum(rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(rho.shape[0])
@@ -186,7 +197,7 @@ class Simulator:
         analysis['std'] = np.sqrt(np.average((np.repeat(sites,rho.shape[0],axis=0) -                        analysis['Mean'].reshape(rho.shape[0],1))**2 , axis=1, weights=rho[:, 1:])).reshape(analysis['Median'].shape)
         analysis['speed'] = analysis['Mean'][1:] - analysis['Mean'][:-1]
         analysis['acc'] = analysis['speed'][1:] - analysis['speed'][:-1]
-
+        print("Analysis end")
         return analysis
     
 def plot_analysis(analysis_rep, L, times, nums):
