@@ -189,7 +189,7 @@ class Simulator:
 
         return analysis
     
-def plot_analysis(analysis_rep, d, L, times, nums):
+def plot_analysis(analysis_rep, L, times, nums):
     fig, ax = plt.subplots(3, height_ratios=[3, 1, 1])
     # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     

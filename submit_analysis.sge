@@ -7,7 +7,7 @@
 #$ -M ofir.arzi@tum.de  # put your email address here!
 #$ -m ea  # n="NO_MAIL", a="MAIL_AT_ABORT", e="MAIL_AT_EXIT", combination `-m ae` is allowed
 
-#$ -pe smp 37
+#$ -pe smp 51
 #$ -R y
 #$ -q cond-mat
 
@@ -17,8 +17,8 @@
 
 ## export PATH="/mount/packs/intelpython36/bin:$PATH"
 export MKL_DYNAMIC=FALSE
-export MKL_NUM_THREADS=37   # This should be the *same* number as in the line ``#$ -pe smp ...`` above
-export OMP_NUM_THREADS=37   # This should be the *same* number as in the line ``#$ -pe smp ...`` above
+export MKL_NUM_THREADS=51   # This should be the *same* number as in the line ``#$ -pe smp ...`` above
+export OMP_NUM_THREADS=51   # This should be the *same* number as in the line ``#$ -pe smp ...`` above
 
 echo "Execute job on host $HOSTNAME at $(date)"
 python parallel_analysis.py
