@@ -189,21 +189,21 @@ class Simulator:
 
         return analysis
     
-def plot_analysis(analysis_rep, d, L, times, nums):
+def plot_analysis(analysis_rep, L, times, nums):
     fig, ax = plt.subplots(3, height_ratios=[3, 1, 1])
     # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     
-    for a,_d in zip(analysis_rep, d):
-        ax[0].plot(a['Mean'], label=_d)
+    for a in analysis_rep:
+        ax[0].plot(a['Mean'], label=a['d'])
     ax[0].legend()
     ax[0].set_title("Mean position")
 
-    for a,_d in zip(analysis_rep, d):
-        ax[1].plot(a['speed'], label=_d)
+    for a in analysis_rep:
+        ax[1].plot(a['speed'], label=a['d'])
     ax[1].set_title("Speed")
 
-    for a,_d in zip(analysis_rep, d):
-        ax[2].plot(a['acc'], label=_d)
+    for a in analysis_rep:
+        ax[2].plot(a['acc'], label=a['d'])
     ax[2].set_title("acceleration")
     
     fig.tight_layout()

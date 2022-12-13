@@ -1,4 +1,5 @@
 import dimers_util 
+import dimers_sim
 import numpy as np
 import matplotlib.pyplot as plt
 import struct
@@ -13,12 +14,15 @@ from dimers_util import *
 from multiprocessing import Pool
 
 def main():
-    L = 100
-    times = 250
-    nums = 150
-    d = [45, 55, 65 ,75, 85, 95]
-    parallel_analysis(L, times, d, nums)
-
+    d_sim = [55, 65 ,75, 85, 95]
+    L_sim = 100
+    times_sim = 5000
+    nums_sim = 10000
+    d_procs_sim = 5
+    nums_subprocs_sim = 10
+    simulator = dimers_sim.Simulator(L=L_sim, times=times_sim, d=d_sim, nums=nums_sim, d_procs_num=d_procs_sim, nums_subprocs_num = nums_subprocs_sim)
+    simulator.parallel_analysis()
+    dimers_sim.plot_analysis(simulator.analysis_rhos, d_sim, L_sim, times_sim, nums_sim)
 if __name__ == '__main__':
 	main()
 
