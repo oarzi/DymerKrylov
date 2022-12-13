@@ -161,12 +161,12 @@ class Simulator:
         allgates = H_ring + H_hopp
 
         initial_psi = get_initial_config(self.L, _d)
-        psi = np.array([[initial_psi]*self.nums], dtype=np.int32)
+        psi = np.array([[initial_psi]*(self.nums//self.nums_subprocs_num)], dtype=np.int32)
 
         def apply(f):
             return f[0](f[1])
 
-        for gates_i in self.progress_bar(range(self.times)):
+        for _ in self.progress_bar(range(self.times)):
             gates_i = np.random.choice(allgates, size=self.nums, p=p_array)
             psi_next = np.array(list(map(apply, zip(gates_i, psi[-1]))))
             psi = np.vstack((psi, [psi_next]))
@@ -193,17 +193,17 @@ def plot_analysis(analysis_rep, d, L, times, nums):
     fig, ax = plt.subplots(3, height_ratios=[3, 1, 1])
     # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     
-    for a,_d in zip(analysis_rep, d):
-        ax[0].plot(a['Mean'], label=_d)
+    for a in analysis_rep:
+        ax[0].plot(a['Mean'], label=a['d'])
     ax[0].legend()
     ax[0].set_title("Mean position")
 
-    for a,_d in zip(analysis_rep, d):
-        ax[1].plot(a['speed'], label=_d)
+    for a in analysis_rep:
+        ax[1].plot(a['speed'], label=a['d'])
     ax[1].set_title("Speed")
 
-    for a,_d in zip(analysis_rep, d):
-        ax[2].plot(a['acc'], label=_d)
+    for a in analysis_rep:
+        ax[2].plot(a['acc'], label=a['d'])
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
