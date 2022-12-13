@@ -149,6 +149,8 @@ def get_h_ring(L):
 @dataclass
 class ring:
     sites : np.ndarray
+    def __call__(self, config):
+        return self.apply(config)
     def apply(self, config):
         if (config[self.sites[0]] == config[self.sites[1]]) and (config[self.sites[2]] == config[self.sites[3]]) and (config[self.sites[0]] != config[self.sites[2]]):  
             config[self.sites] = 1- config[self.sites]
@@ -185,6 +187,8 @@ def get_h_hop(L):
 @dataclass
 class hop:
     sites : np.ndarray
+    def __call__(self, config):
+        return self.apply(config)
     def apply(self, config):
         if (config[self.sites[0]] != config[self.sites[3]]) and (config[self.sites[1]] + config[self.sites[2]]) % 2 and (config[self.sites[4]] + config[self.sites[5]]):  
             config[self.sites[[0,3]]] = 1 - config[self.sites[[0,3]]]
