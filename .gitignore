@@ -5,3 +5,5 @@
 .ipynb_checkpoints/dimers_sim-checkpoint.py
 __pycache__/dimers_sim.cpython-39.pyc
 Classical_dynamics.ipynb
+*.ipynb
+*.ipynb
