@@ -142,7 +142,7 @@ class Simulator:
         return self.analysis_rhos
     
     def classical_evolution(self, H, _d, q, sema):
-        print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, self.d, self.nums))
+        print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, _d, self.nums))
         start = time.process_time()
         with Pool(self.nums_subprocs_num) as p:
             c_rhos =  p.starmap(self.classical_evolutions_nums, ((H, _d) for i in range(self.nums_subprocs_num)), chunksize=1)
@@ -179,7 +179,7 @@ class Simulator:
             psi_next = np.array(list(map(apply, zip(gates_i, psi[-1]))))
             psi = np.vstack((psi, [psi_next]))
         
-        print("{} before= {}".format(os.getpid(), psi.shape))
+        print("{}->{} before= {}".format(os.getppid(), os.getpid(), psi.shape))
         rho = np.apply_along_axis(defect_density, 2 , psi)
         print("charge=", rho.shape)
         rho = np.sum(rho, axis=1)
