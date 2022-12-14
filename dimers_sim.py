@@ -59,11 +59,13 @@ class Simulator:
         print("All processes closed")
         print("{} items waiting".format(queue.qsize()))
         
+        fname = 'analysis_L{}_t{}_d{}'.format(self.L, self.times, time.strftime("%Y_%m_%d__%H_%M"))
+        self.analysis_rhos = [fname]
         while not queue.empty():
             self.analysis_rhos.append(queue.get())
         
         if self.save:
-            with open('analyses/analysis_L{}_t{}_d{}.pickle'.format(self.L, self.times, time.strftime("%Y_%m_%d__%H_%M")), 'wb') as handle:
+            with open("analyses/" + fname + ".pickle", 'wb') as handle:
                 pickle.dump(self.analysis_rhos, handle)
         print("Finished parallel_analysis for  L =  {}, times = {}, d = {}, nums = {}".format(self.L, self.times, self.d, self.nums))
         return self.analysis_rhos
@@ -139,8 +141,10 @@ class Simulator:
         print("Analysis end")
         return analysis
     
-def plot_analysis(analysis_rep, L, times, nums):
-    fig, ax = plt.subplots(3, height_ratios=[3, 1, 1])
+def plot_analysis(analysis, L, times, nums, save=False):
+
+    analysis_rep = analysis[1:]
+    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[3, 1, 1]})
     # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     
     for a in analysis_rep:
@@ -157,6 +161,8 @@ def plot_analysis(analysis_rep, L, times, nums):
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
+    if save:
+        plt.savefig("figs/" + analysis[0], format='png')
     plt.show()
 
 def plot_rho(analysis,c=False):
