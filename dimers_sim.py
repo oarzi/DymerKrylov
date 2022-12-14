@@ -35,7 +35,7 @@ class Simulator:
     def parallel_analysis(self):
         self.analysis_rhos = []
         H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
-        print(len(H['H_ring']), len(H['H_hopp']))
+        print("Starting {}, {} | {}".format(len(H['H_ring']), len(H['H_hopp']), time.strftime("%Y_%m_%d__%H_%M")))
         manager = Manager()
         queue = manager.Queue()
         sema = Semaphore(self.d_procs_num)
@@ -67,12 +67,13 @@ class Simulator:
         if self.save:
             with open("analyses/" + fname + ".pickle", 'wb') as handle:
                 pickle.dump(self.analysis_rhos, handle)
-        print("Finished parallel_analysis for  L =  {}, times = {}, d = {}, nums = {}".format(self.L, self.times, self.d, self.nums))
+        print("Finished parallel_analysis for  L =  {}, times = {}, d = {}, nums = {} | {}".format(self.L, self.times, 
+                                                                                        self.d, self.nums, 
+                                                                                        time.strftime("%Y_%m_%d__%H_%M")))
         return self.analysis_rhos
     
     def classical_evolution(self, H, _d, q, sema):
         print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, _d, self.nums))
-        start = time.process_time()
         with Pool(self.batch_subprocs_num) as p:
             c_rhos =  p.starmap(self.classical_evolutions_batch, repeat((H, _d), self.batch_subprocs_num), chunksize=1)
             p.close()
@@ -86,7 +87,7 @@ class Simulator:
         analyzed = self.analyze(rho)
         analyzed['d'] = _d
         q.put(analyzed, False)     
-        print("Elapsed time during pid {} in seconds: {}".format(os.getpid(), time.process_time() - start)) 
+        print("{} finished.".format(os.getpid())) 
         sema.release()
         return 0
 
@@ -109,8 +110,9 @@ class Simulator:
         def apply(f):
             return f[0](f[1])
 
-        for _ in self.progress_bar(range(self.times)):
-            # print("===================")
+        for i in self.progress_bar(range(self.times)):
+            if not self.local and (i % (self.times//25) == 0):
+                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/times), flush=True)
             gates_i = np.random.choice(allgates, size=self.nums, p=p_array)
             psi = np.array(list(map(apply, zip(gates_i, psi))))
             # print("psi.shape=", psi.shape)
