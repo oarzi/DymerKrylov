@@ -53,7 +53,7 @@ class Simulator:
         while procs:
             curr_p = procs.pop(0)
             if curr_p.is_alive():
-                p.join()
+                curr_p.join()
                 curr_p.close()
 
         print("All processes closed")
