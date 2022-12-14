@@ -112,7 +112,7 @@ class Simulator:
 
         for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
-                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/times), flush=True)
+                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             gates_i = np.random.choice(allgates, size=self.nums, p=p_array)
             psi = np.array(list(map(apply, zip(gates_i, psi))))
             # print("psi.shape=", psi.shape)
@@ -123,9 +123,8 @@ class Simulator:
             # psi = np.vstack((psi, [psi_next]))
             # print("rho.shape=", rho.shape)
 
-        
-        # print("{}->{} before= {}".format(os.getppid(), os.getpid(), psi.shape))
-        # print("{} batch rho={}".format(os.getppid(), rho.shape))
+        if not self.local:
+            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True)
 
         return rho
 
