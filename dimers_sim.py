@@ -4,7 +4,10 @@ from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
-from tqdm import tqdm
+try:
+    from tqdm import tqdm
+except ModuleNotFoundError:
+    pass
 import os
 from itertools import repeat
 
