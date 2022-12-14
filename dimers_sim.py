@@ -146,7 +146,7 @@ class Simulator:
 def plot_analysis(analysis, L, times, nums, save=False):
 
     analysis_rep = analysis[1:]
-    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[3, 1, 1]})
+    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[3, 1, 1]}, figsize=(13, 10))
     # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     
     for a in analysis_rep:
