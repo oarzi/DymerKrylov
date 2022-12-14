@@ -22,7 +22,7 @@ class Simulator:
     d_procs_num : int = 1
     batch_subprocs_num : int = 1
     save : bool = True
-    analysis_rhos : list[dict] = None
+    analysis_rhos : list = None
     
 
     def progress_bar(self, iterable):
