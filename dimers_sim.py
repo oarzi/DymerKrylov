@@ -124,7 +124,7 @@ class Simulator:
             # print("rho.shape=", rho.shape)
 
         if not self.local:
-            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True)
+            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
         return rho
 
@@ -146,7 +146,7 @@ def plot_analysis(analysis, L, times, nums, save=False):
 
     analysis_rep = analysis[1:]
     fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[3, 1, 1]}, figsize=(13, 10))
-    # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
+    fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     
     for a in analysis_rep:
         ax[0].plot(a['Mean'], label=a['d'])
@@ -163,7 +163,7 @@ def plot_analysis(analysis, L, times, nums, save=False):
     
     fig.tight_layout()
     if save:
-        plt.savefig("figs/" + analysis[0], format='png')
+        plt.savefig("figs/" + analysis[0] + '.png', format='png')
     plt.show()
 
 def plot_rho(analysis,c=False):
