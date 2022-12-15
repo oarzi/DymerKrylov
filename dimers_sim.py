@@ -63,6 +63,7 @@ class Simulator:
         self.analysis_rhos = [fname]
         while not queue.empty():
             self.analysis_rhos.append(queue.get())
+        self.analysis_rhos.append(self.nums)
         
         if self.save:
             with open("analyses/" + fname + ".pickle", 'wb') as handle:
