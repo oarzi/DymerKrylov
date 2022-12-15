@@ -143,22 +143,23 @@ class Simulator:
         return analysis
     
 def plot_analysis(analysis, L, times, nums, save=False):
+    lwdt = 1
 
     analysis_rep = analysis[1:]
-    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[3, 1, 1]}, figsize=(13, 10))
+    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
     fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
     
     for a in analysis_rep:
-        ax[0].plot(a['Mean'], label=a['d'])
+        ax[0].plot(a['Mean'], label=a['d'], linewidth=lwdt)
     ax[0].legend()
     ax[0].set_title("Mean position")
 
     for a in analysis_rep:
-        ax[1].plot(a['speed'], label=a['d'])
+        ax[1].plot(a['speed'], label=a['d'], linewidth=lwdt)
     ax[1].set_title("Speed")
 
     for a in analysis_rep:
-        ax[2].plot(a['acc'], label=a['d'])
+        ax[2].plot(a['acc'], label=a['d'], linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
