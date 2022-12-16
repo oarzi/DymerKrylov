@@ -5,6 +5,8 @@ from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
 from tqdm import tqdm
+try:
+    from tqdm import tqdm
 import os
 
 def quantum_evolution(L, times, H, d=0, J=1):
