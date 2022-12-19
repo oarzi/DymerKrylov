@@ -11,20 +11,46 @@ except ModuleNotFoundError:
 import os
 from itertools import repeat
 
+@datacles
+
+class Dimer_result:   
+    L : int
+    times: int
+    d : list
+    nums : int
+    file_name : str = ""
+    dir_name : str = "analyses/"
+    prob : int = 1
+    rhos : list = []
+    
+    def __post_init__(self):
+        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}__d{}'.format(self.L, self.times, 
+                                                                          self.fnums,      
+                                                                          time.strftime("%Y_%m_%d__%H_%M"))
+    def save(self):
+        with open(self.dir_name + self.filename + ".pickle", 'wb') as f:
+            pickle.dump(self, f)
+
+    @classmethod
+    def load(cls, filename):
+        with open(self.dir_name + self.filename + ".pickle", 'rb') as f:
+            return pickle.load(f)
+
 @dataclass
 class Simulator:
     L : int
     times: int
     d : list
     nums : int
+    name : str = ""
+    dir_name : str = "analyses/"
     prob : int = 1
     local: bool = True
     d_procs_num : int = 1
     batch_subprocs_num : int = 1
     save : bool = True
-    analysis_rhos : list = None
-    
 
+        
     def progress_bar(self, iterable):
         if self.local:
             tqdm_text = "#" + ("{}->".format(os.getppid()) + "{}".format(os.getpid())).ljust(12) + " "
@@ -59,19 +85,17 @@ class Simulator:
         print("All processes closed")
         print("{} items waiting".format(queue.qsize()))
         
-        fname = 'analysis_L{}_t{}_d{}'.format(self.L, self.times, time.strftime("%Y_%m_%d__%H_%M"))
-        self.analysis_rhos = [fname]
+        result = Dimer_result(L=self.L, times=self.times, nums=self.nums,file_name = self.name, dir_name=self.dir_mame)
         while not queue.empty():
-            self.analysis_rhos.append(queue.get())
-        self.analysis_rhos.append(self.nums)
-        
+            result.rhos.append(queue.get())
+            
         if self.save:
-            with open("analyses/" + fname + ".pickle", 'wb') as handle:
-                pickle.dump(self.analysis_rhos, handle)
+            result.save()
+
         print("Finished parallel_analysis for  L =  {}, times = {}, d = {}, nums = {} | {}".format(self.L, self.times, 
                                                                                         self.d, self.nums, 
-                                                                                        time.strftime("%Y_%m_%d__%H_%M")))
-        return self.analysis_rhos
+                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
+        return results
     
     def classical_evolution(self, H, _d, q, sema):
         print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, _d, self.nums))
@@ -86,14 +110,12 @@ class Simulator:
         print("after batch sum", rho.shape)
         print(rho[:,0])
         
-        analyzed = self.analyze(rho)
-        analyzed['d'] = _d
+        analyzed = self.analyze(rho, _d
         q.put(analyzed, False)     
         print("{} finished.".format(os.getpid())) 
         sema.release()
         return 0
 
-    
     def classical_evolutions_batch(self, H, _d):
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
 
@@ -106,8 +128,7 @@ class Simulator:
         
         rho = np.apply_along_axis(defect_density, 1 , psi)
         rho = np.sum(rho, axis=0).reshape(1, self.L)
-
-
+        
         def apply(f):
             return f[0](f[1])
 
@@ -128,11 +149,15 @@ class Simulator:
             print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
         return rho
-
-    def analyze(self, rho):
+    
+    def analyze(self, rho, _d):
         print("Analysis start")
         analysis = {}
+        analysis['d'] = _d
         analysis['rho'] = rho
+        analysis['nums'] = self.nums
+        analysis['times'] = self.times
+        
         analysis['Median'] = 1 + np.sum((np.cumsum(rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(rho.shape[0])
         sites = [np.arange(1, rho.shape[1])]
 
