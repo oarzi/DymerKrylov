@@ -84,6 +84,7 @@ class Simulator:
         print("before batch sum", rho.shape)
         rho = np.sum(rho, axis=0)/self.nums
         print("after batch sum", rho.shape)
+        print(rho[:,0])
         
         analyzed = self.analyze(rho)
         analyzed['d'] = _d
@@ -105,8 +106,7 @@ class Simulator:
         
         rho = np.apply_along_axis(defect_density, 1 , psi)
         rho = np.sum(rho, axis=0).reshape(1, self.L)
-        
-        # print("rho0.shape=", rho.shape)
+
 
         def apply(f):
             return f[0](f[1])
@@ -167,6 +167,9 @@ def plot_analysis(analysis, L, times, nums, save=False):
     if save:
         plt.savefig("figs/" + analysis[0] + '.png', format='png')
     plt.show()
+    
+def plot_dist(rh):
+    return
 
 def plot_rho(analysis,c=False):
     plt.figure(figsize=[16,12])
