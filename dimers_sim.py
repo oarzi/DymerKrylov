@@ -10,9 +10,9 @@ except ModuleNotFoundError:
     pass
 import os
 from itertools import repeat
+from dataclasses import dataclass, field
 
-@datacles
-
+@dataclass
 class Dimer_result:   
     L : int
     times: int
@@ -21,11 +21,11 @@ class Dimer_result:
     file_name : str = ""
     dir_name : str = "analyses/"
     prob : int = 1
-    rhos : list = []
+    rhos : list = field(default_factory=list) 
     
     def __post_init__(self):
-        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}__d{}'.format(self.L, self.times, 
-                                                                          self.fnums,      
+        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}_d{}___'.format(self.L, self.times, 
+                                                                          self.nums, self.d,   
                                                                           time.strftime("%Y_%m_%d__%H_%M"))
     def save(self):
         with open(self.dir_name + self.filename + ".pickle", 'wb') as f:
@@ -85,7 +85,7 @@ class Simulator:
         print("All processes closed")
         print("{} items waiting".format(queue.qsize()))
         
-        result = Dimer_result(L=self.L, times=self.times, nums=self.nums,file_name = self.name, dir_name=self.dir_mame)
+        result = Dimer_result(L=self.L, times=self.times, nums=self.nums,file_name = self.name, dir_name=self.dir_name, d=self.d)
         while not queue.empty():
             result.rhos.append(queue.get())
             
@@ -110,7 +110,7 @@ class Simulator:
         print("after batch sum", rho.shape)
         print(rho[:,0])
         
-        analyzed = self.analyze(rho, _d
+        analyzed = self.analyze(rho, _d)
         q.put(analyzed, False)     
         print("{} finished.".format(os.getpid())) 
         sema.release()
