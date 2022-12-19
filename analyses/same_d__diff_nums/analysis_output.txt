@@ -1,0 +1,3 @@
+Execute job on host meitner12.t30.ph.tum.de at Mon 19 Dec 15:51:25 CET 2022
+Starting 118, 700 | 2022_12_19__15_51
+id: 298559, L =  120, times = 4000, d = 50, nums = 10000
