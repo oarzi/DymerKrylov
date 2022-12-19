@@ -4,124 +4,104 @@ from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
-from tqdm import tqdm
 try:
     from tqdm import tqdm
+except ModuleNotFoundError:
+    pass
 import os
+from dataclasses import dataclass, field
 
-def quantum_evolution(L, times, H, d=0, J=1):
-    H_ring, H_hopp, configs = H['H_ring'], H['H_hopp'], H['configs']
-    dim = H_ring.shape[0]
-    psi, i0 = get_initial_state(L, configs, dim, d)
+@dataclass
+class Experiment: 
+    file_name : str
+    dir_name : str
+    results : list
+    description : str = ''
     
+    def save(self):
+        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
+            pickle.dump(self, f)
 
-    dt = 0.5
-    rho = [defect_density(configs,psi)]
-
-    for i in  tqdm(range(times)):
-        psi = expm_multiply(-1j*dt*H_ring,psi)
-        psi = expm_multiply(-1j*dt*J*H_hopp,psi)
-
-        rho.append(defect_density(configs,psi))
-
-    rho = np.array(rho)
+@dataclass
+class Analysis:   
+    L : int
+    times: int
+    d : int
+    nums : int
+    rho : np.ndarray
+    label : str
+    file_name : str
+    dir_name : str
+    analysis: dict = field(default_factory=dict, init=False)
     
-    return rho
+    def __post_init__(self):
+        self.analyze()
+        
+    def save(self):
+        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
+            pickle.dump(self, f)
 
-def classical_evolutions_single(L, times, H, d, _p):
-    H_ring, H_hopp, configs = H['H_ring'], H['H_hopp'], H['configs']
-    
-    psi, i = get_initial_state(L, configs, H_ring.shape[0], d)
-    rho = np.array([defect_density(configs,psi)])
-    
-    
-    steps = [i]
-    for _ in  tqdm(range(times)):
-        rings_i = list(H_ring.getrow(i).nonzero()[1])
-        hopps_i = list(H_hopp.getrow(i).nonzero()[1])
-        p_array = np.concatenate((np.ones(len(rings_i)), _p*np.ones(len(hopps_i))))/(len(rings_i)+_p*len(hopps_i))
-        i = np.random.choice(rings_i + hopps_i, p=p_array)
-        curr_psi = np.zeros(psi.shape)
-        curr_psi[i] = 1.
+    @classmethod
+    def load(cls, filename):
+        with open(self.dir_name + self.file_name + ".pickle", 'rb') as f:
+            return pickle.load(f)
 
-        rho = np.row_stack((rho ,defect_density(configs,curr_psi)))
-        steps.append(i)
-    
-    return (rho, steps)
+    def analyze(self):
+        print("Analysis start")
+        self.analysis['d'] = self.d
+        self.analysis['rho'] = self.rho
+        self.analysis['nums'] = self.nums
+        self.analysis['times'] = self.times
+        self.analysis['L'] = self.L
+        self.analysis['label'] = self.label
+        
+        self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
+        sites = [np.arange(1, self.rho.shape[1])]
 
-def classical_evolutions_single2(L, times, H, d, _p):
-    H_ring, H_hopp, = H['H_ring'], H['H_hopp']
-    gates = H_ring + H_hopp
-    p_array = np.concatenate((np.ones(len(H_ring)), _p*np.ones(len(H_hopp))))/(len(H_ring)+_p*len(H_hopp))
-    psi =  get_initial_config(L, d)
-    rho = np.array([defect_density(psi)])
+        self.analysis['Mean'] = np.average(np.repeat(sites,self.rho.shape[0],axis=0), axis=1, weights=self.rho[:, 1:]).reshape(self.analysis['Median'].shape)
+        self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
+        self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
+        self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
+        print("Analysis end")
+        return self.analysis
     
-    gate = np.random.choice(gates, size=times, p=p_array)
-    
-    for gate in tqdm(gates, miniters=20):
-        # gate = np.random.choice(gates, p=p_array)
-        psi = gate(psi)
-        rho = np.row_stack((rho ,defect_density(psi)))
-    return rho
-
-def classical_evolution(L, times, H, d=0, nums=1, steps=False, p=1):
-    print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), L, times, d, nums))
-    start = time.process_time()
-    vc = np.vectorize(classical_evolutions_single2, otypes='O', cache=True)
-    
-    results = vc([L]*nums, [times]*nums, [H]*nums, [d]*nums, [p]*nums)
-    
-    rhos = np.array(results)
-    rhos = np.sum(rhos, axis=0)/nums
-    
-    end = time.process_time()
-    print("Elapsed time during the {} in seconds: {}".format(os.getpid(), end-start)) 
-    return (rhos, [res for res in results[1]]) if steps else rhos
-
-
-
-def parallel_analysis(L, times, d, nums):
-    H_ring, H_hopp = get_h_ring(L), get_h_hop(L)
-    print(len(H_ring), len(H_hopp))
-    H = {'H_ring' : H_ring, 'H_hopp' : H_hopp}
-    with Pool(6) as p:
-        c_rhos =  p.starmap(classical_evolutions_single3, ((L, times, H, d, nums) for d in d), chunksize=1)
-        p.close()
-        p.join()
-    analysis_rhos =  [analyze(rho) for rho in c_rhos]
-    with open('analysis_L{}_t{}_d{}.pickle'.format(L, times, time.strftime("%Y_%m_%d_%H_%M")), 'wb') as handle:
-        pickle.dump(analysis_rhos, handle)
-    return analysis_rhos
-
 @dataclass
 class Simulator:
     L : int
     times: int
-    d : list
+    d : int
     nums : int
+    
     prob : int = 1
+    file_name : str = ""
+    dir_name : str = "analyses/"
+    batch_subprocs_num : int = 1
+    save : bool = False
     local: bool = True
-    d_procs_num : int = 1
-    nums_subprocs_num : int = 1
-    
-    def __post_init__(self):
-        self.analysis_rhos = []
+    analysis : Analysis = None
 
+    def __post_init__(self):
+        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}_d{}___'.format(self.L, self.times, 
+                                                                          self.nums, self.d,   
+                                                                          time.strftime("%Y_%m_%d__%H_%M"))
     def progress_bar(self, iterable):
-        return tqdm(iterable, miniters= self.times//25) if self.local else iterable
+        if self.local:
+            tqdm_text = "#" + ("{}->".format(os.getppid()) + "{}".format(os.getpid())).ljust(12) + " "
+            return tqdm(iterable, miniters= self.times//25, desc=tqdm_text, position=0, leave=False) 
+        else:
+            return iterable
     
-    def parallel_analysis(self):
-        H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
-        print(len(H['H_ring']), len(H['H_hopp']))
+    @classmethod
+    def simulate_parallel(cls, simulators, procs_num):
         manager = Manager()
         queue = manager.Queue()
-        sema = Semaphore(self.d_procs_num)
-        ds = self.d.copy()
+        sema = Semaphore(procs_num)
         procs = []
-        while ds:
+        jobs = len(simulators)
+        while simulators:
             sema.acquire()
-            curr_d = ds.pop(0)
-            p = Process(target=self.classical_evolution, args=(H, curr_d, queue, sema),daemon=False)
+            sim = simulators.pop(0)
+            p = Process(target=Simulator.simulate_parallel_task, args=(sim, queue, sema),daemon=False)
             procs.append(p)
             p.start()
         
@@ -130,24 +110,34 @@ class Simulator:
         while procs:
             curr_p = procs.pop(0)
             if curr_p.is_alive():
-                p.join()
+                curr_p.join()
                 curr_p.close()
 
         print("All processes closed")
         print("{} items waiting".format(queue.qsize()))
         
+        results = []
         while not queue.empty():
-            self.analysis_rhos.append(queue.get())
+            results.append(queue.get())
 
-        with open('analyses/analysis_L{}_t{}_d{}.pickle'.format(self.L, self.times, time.strftime("%Y_%m_%d_%H_%M")), 'wb') as handle:
-            pickle.dump(self.analysis_rhos, handle)
-        return self.analysis_rhos
+
+        print("Finished simulate_parallel for {} simulations | {}".format(jobs, 
+                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
+        return results
     
-    def classical_evolution(self, H, _d, q, sema):
-        print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, _d, self.nums))
-        start = time.process_time()
-        with Pool(self.nums_subprocs_num) as p:
-            c_rhos =  p.starmap(self.classical_evolutions_nums, ((H, _d) for i in range(self.nums_subprocs_num)), chunksize=1)
+    @classmethod
+    def simulate_parallel_task(cls, sim, q, sema):
+        q.put(sim.simulate())
+        sema.release()
+        return 0
+    
+    
+    def simulate(self):
+        print("Starting id: {}, L =  {}, times = {}, d = {}, nums = {} |".format(os.getpid(), self.L, self.times, self.d, self.nums, time.strftime("%Y_%m_%d__%H_%M")))
+        
+        H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
+        with Pool(self.batch_subprocs_num) as p:
+            c_rhos =  p.map(self.classical_evolutions_batch, (H for i in range(self.batch_subprocs_num)), chunksize=1)
             p.close()
             p.join()
         
@@ -155,72 +145,80 @@ class Simulator:
         print("before batch sum", rho.shape)
         rho = np.sum(rho, axis=0)/self.nums
         print("after batch sum", rho.shape)
-        
-        analyzed = self.analyze(rho)
-        analyzed['d'] = _d
-        q.put(analyzed, False)     
-        print("Elapsed time during pid {} in seconds: {}".format(os.getpid(), time.process_time() - start)) 
-        sema.release()
-        return 0
 
-    
-    def classical_evolutions_nums(self, H, _d):
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, nums=self.nums, rho=rho, label='nums', file_name = self.file_name, dir_name=self.dir_name)
+        
+        if self.save:
+            analysis.save()
+            
+        print("Finished id {}: L =  {}, times = {}, d = {}, nums = {} | {}".format(os.getpid(), self.L, self.times, 
+                                                                                        self.d, self.nums, 
+                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
+        return analysis
+
+    def classical_evolutions_batch(self, H):
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
 
         p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
         allgates = H_ring + H_hopp
 
-        initial_psi = get_initial_config(self.L, _d)
-        psi = np.array([[initial_psi]*(self.nums//self.nums_subprocs_num)], dtype=np.int32)
-
+        initial_psi = [get_initial_config(self.L, self.d)]*(self.nums//self.batch_subprocs_num)
+        psi = np.array(initial_psi, dtype=np.int32)
+        # print("psi0.shape=", psi.shape)
+        
+        rho = np.apply_along_axis(defect_density, 1 , psi)
+        rho = np.sum(rho, axis=0).reshape(1, self.L)
+        
         def apply(f):
             return f[0](f[1])
 
-        for _ in self.progress_bar(range(self.times)):
+        for i in self.progress_bar(range(self.times)):
+            if not self.local and (i % (self.times//25) == 0):
+                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             gates_i = np.random.choice(allgates, size=self.nums, p=p_array)
-            psi_next = np.array(list(map(apply, zip(gates_i, psi[-1]))))
-            psi = np.vstack((psi, [psi_next]))
-        
-        print("{}->{} before= {}".format(os.getppid(), os.getpid(), psi.shape))
-        rho = np.apply_along_axis(defect_density, 2 , psi)
-        print("charge=", rho.shape)
-        rho = np.sum(rho, axis=1)
-        print("after", rho.shape)
+            psi = np.array(list(map(apply, zip(gates_i, psi))))
+            # print("psi.shape=", psi.shape)
+            charge = np.apply_along_axis(defect_density, 1 , psi)
+            # print("charge.shape=", charge.shape)
+            rho = np.vstack((rho, np.sum(np.apply_along_axis(defect_density, 1 , psi), axis=0).reshape(1, self.L)))
+
+            # psi = np.vstack((psi, [psi_next]))
+        print("rho.shape=", rho.shape)
+
+        if not self.local:
+            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
+
         return rho
-
-    def analyze(self, rho):
-        print("Analysis start")
-        analysis = {}
-        analysis['rho'] = rho
-        analysis['Median'] = 1 + np.sum((np.cumsum(rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(rho.shape[0])
-        sites = [np.arange(1, rho.shape[1])]
-
-        analysis['Mean'] = np.average(np.repeat(sites,rho.shape[0],axis=0), axis=1, weights=rho[:, 1:]).reshape(analysis['Median'].shape)
-        analysis['std'] = np.sqrt(np.average((np.repeat(sites,rho.shape[0],axis=0) -                        analysis['Mean'].reshape(rho.shape[0],1))**2 , axis=1, weights=rho[:, 1:])).reshape(analysis['Median'].shape)
-        analysis['speed'] = analysis['Mean'][1:] - analysis['Mean'][:-1]
-        analysis['acc'] = analysis['speed'][1:] - analysis['speed'][:-1]
-        print("Analysis end")
-        return analysis
     
-def plot_analysis(analysis_rep, L, times, nums):
-    fig, ax = plt.subplots(3, height_ratios=[3, 1, 1])
-    # fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
+
     
-    for a in analysis_rep:
-        ax[0].plot(a['Mean'], label=a['d'])
+def plot_analyses(analyses,save=False, title='', name=''):
+    lwdt = 1
+
+    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
+    if title:
+        fig.suptitle(title)
+    
+    for a in analyses:
+        ax[0].plot(a.analysis['Mean'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
     ax[0].legend()
     ax[0].set_title("Mean position")
 
-    for a in analysis_rep:
-        ax[1].plot(a['speed'], label=a['d'])
+    for a in analyses:
+        ax[1].plot(a.analysis['speed'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
     ax[1].set_title("Speed")
 
-    for a in analysis_rep:
-        ax[2].plot(a['acc'], label=a['d'])
+    for a in analyses:
+        ax[2].plot(a.analysis['acc'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
+    if save and name:
+        plt.savefig("figs/" + path + '.png', format='png')
     plt.show()
+    
+def plot_dist(rh):
+    return
 
 def plot_rho(analysis,c=False):
     plt.figure(figsize=[16,12])

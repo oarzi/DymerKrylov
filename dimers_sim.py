@@ -9,68 +9,99 @@ try:
 except ModuleNotFoundError:
     pass
 import os
-from itertools import repeat
 from dataclasses import dataclass, field
 
 @dataclass
-class Dimer_result:   
+class Experiment: 
+    file_name : str
+    dir_name : str
+    results : list
+    description : str = ''
+    
+    def save(self):
+        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
+            pickle.dump(self, f)
+
+@dataclass
+class Analysis:   
     L : int
     times: int
-    d : list
+    d : int
     nums : int
-    file_name : str = ""
-    dir_name : str = "analyses/"
-    prob : int = 1
-    rhos : list = field(default_factory=list) 
+    rho : np.ndarray
+    label : str
+    file_name : str
+    dir_name : str
+    analysis: dict = field(default_factory=dict, init=False)
     
     def __post_init__(self):
-        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}_d{}___'.format(self.L, self.times, 
-                                                                          self.nums, self.d,   
-                                                                          time.strftime("%Y_%m_%d__%H_%M"))
+        self.analyze()
+        
     def save(self):
-        with open(self.dir_name + self.filename + ".pickle", 'wb') as f:
+        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
             pickle.dump(self, f)
 
     @classmethod
     def load(cls, filename):
-        with open(self.dir_name + self.filename + ".pickle", 'rb') as f:
+        with open(self.dir_name + self.file_name + ".pickle", 'rb') as f:
             return pickle.load(f)
 
+    def analyze(self):
+        print("Analysis start")
+        self.analysis['d'] = self.d
+        self.analysis['rho'] = self.rho
+        self.analysis['nums'] = self.nums
+        self.analysis['times'] = self.times
+        self.analysis['L'] = self.L
+        self.analysis['label'] = self.label
+        
+        self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
+        sites = [np.arange(1, self.rho.shape[1])]
+
+        self.analysis['Mean'] = np.average(np.repeat(sites,self.rho.shape[0],axis=0), axis=1, weights=self.rho[:, 1:]).reshape(self.analysis['Median'].shape)
+        self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
+        self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
+        self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
+        print("Analysis end")
+        return self.analysis
+    
 @dataclass
 class Simulator:
     L : int
     times: int
-    d : list
+    d : int
     nums : int
-    name : str = ""
-    dir_name : str = "analyses/"
+    
     prob : int = 1
-    local: bool = True
-    d_procs_num : int = 1
+    file_name : str = ""
+    dir_name : str = "analyses/"
     batch_subprocs_num : int = 1
-    save : bool = True
+    save : bool = False
+    local: bool = True
+    analysis : Analysis = None
 
-        
+    def __post_init__(self):
+        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}_d{}___'.format(self.L, self.times, 
+                                                                          self.nums, self.d,   
+                                                                          time.strftime("%Y_%m_%d__%H_%M"))
     def progress_bar(self, iterable):
         if self.local:
             tqdm_text = "#" + ("{}->".format(os.getppid()) + "{}".format(os.getpid())).ljust(12) + " "
-            return tqdm(iterable, miniters= self.times//25, desc=tqdm_text) 
+            return tqdm(iterable, miniters= self.times//25, desc=tqdm_text, position=0, leave=False) 
         else:
             return iterable
     
-    def parallel_analysis(self):
-        self.analysis_rhos = []
-        H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
-        print("Starting {}, {} | {}".format(len(H['H_ring']), len(H['H_hopp']), time.strftime("%Y_%m_%d__%H_%M")))
+    @classmethod
+    def simulate_parallel(cls, simulators, procs_num):
         manager = Manager()
         queue = manager.Queue()
-        sema = Semaphore(self.d_procs_num)
-        ds = self.d.copy()
+        sema = Semaphore(procs_num)
         procs = []
-        while ds:
+        jobs = len(simulators)
+        while simulators:
             sema.acquire()
-            curr_d = ds.pop(0)
-            p = Process(target=self.classical_evolution, args=(H, curr_d, queue, sema),daemon=False)
+            sim = simulators.pop(0)
+            p = Process(target=Simulator.simulate_parallel_task, args=(sim, queue, sema),daemon=False)
             procs.append(p)
             p.start()
         
@@ -85,22 +116,28 @@ class Simulator:
         print("All processes closed")
         print("{} items waiting".format(queue.qsize()))
         
-        result = Dimer_result(L=self.L, times=self.times, nums=self.nums,file_name = self.name, dir_name=self.dir_name, d=self.d)
+        results = []
         while not queue.empty():
-            result.rhos.append(queue.get())
-            
-        if self.save:
-            result.save()
+            results.append(queue.get())
 
-        print("Finished parallel_analysis for  L =  {}, times = {}, d = {}, nums = {} | {}".format(self.L, self.times, 
-                                                                                        self.d, self.nums, 
+
+        print("Finished simulate_parallel for {} simulations | {}".format(jobs, 
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return results
     
-    def classical_evolution(self, H, _d, q, sema):
-        print("id: {}, L =  {}, times = {}, d = {}, nums = {}".format(os.getpid(), self.L, self.times, _d, self.nums))
+    @classmethod
+    def simulate_parallel_task(cls, sim, q, sema):
+        q.put(sim.simulate())
+        sema.release()
+        return 0
+    
+    
+    def simulate(self):
+        print("Starting id: {}, L =  {}, times = {}, d = {}, nums = {} |".format(os.getpid(), self.L, self.times, self.d, self.nums, time.strftime("%Y_%m_%d__%H_%M")))
+        
+        H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
         with Pool(self.batch_subprocs_num) as p:
-            c_rhos =  p.starmap(self.classical_evolutions_batch, repeat((H, _d), self.batch_subprocs_num), chunksize=1)
+            c_rhos =  p.map(self.classical_evolutions_batch, (H for i in range(self.batch_subprocs_num)), chunksize=1)
             p.close()
             p.join()
         
@@ -108,21 +145,24 @@ class Simulator:
         print("before batch sum", rho.shape)
         rho = np.sum(rho, axis=0)/self.nums
         print("after batch sum", rho.shape)
-        print(rho[:,0])
-        
-        analyzed = self.analyze(rho, _d)
-        q.put(analyzed, False)     
-        print("{} finished.".format(os.getpid())) 
-        sema.release()
-        return 0
 
-    def classical_evolutions_batch(self, H, _d):
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, nums=self.nums, rho=rho, label='nums', file_name = self.file_name, dir_name=self.dir_name)
+        
+        if self.save:
+            analysis.save()
+            
+        print("Finished id {}: L =  {}, times = {}, d = {}, nums = {} | {}".format(os.getpid(), self.L, self.times, 
+                                                                                        self.d, self.nums, 
+                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
+        return analysis
+
+    def classical_evolutions_batch(self, H):
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
 
         p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
         allgates = H_ring + H_hopp
 
-        initial_psi = [get_initial_config(self.L, _d)]*(self.nums//self.batch_subprocs_num)
+        initial_psi = [get_initial_config(self.L, self.d)]*(self.nums//self.batch_subprocs_num)
         psi = np.array(initial_psi, dtype=np.int32)
         # print("psi0.shape=", psi.shape)
         
@@ -143,54 +183,38 @@ class Simulator:
             rho = np.vstack((rho, np.sum(np.apply_along_axis(defect_density, 1 , psi), axis=0).reshape(1, self.L)))
 
             # psi = np.vstack((psi, [psi_next]))
-            # print("rho.shape=", rho.shape)
+        print("rho.shape=", rho.shape)
 
         if not self.local:
             print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
         return rho
     
-    def analyze(self, rho, _d):
-        print("Analysis start")
-        analysis = {}
-        analysis['d'] = _d
-        analysis['rho'] = rho
-        analysis['nums'] = self.nums
-        analysis['times'] = self.times
-        
-        analysis['Median'] = 1 + np.sum((np.cumsum(rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(rho.shape[0])
-        sites = [np.arange(1, rho.shape[1])]
 
-        analysis['Mean'] = np.average(np.repeat(sites,rho.shape[0],axis=0), axis=1, weights=rho[:, 1:]).reshape(analysis['Median'].shape)
-        analysis['std'] = np.sqrt(np.average((np.repeat(sites,rho.shape[0],axis=0) -                        analysis['Mean'].reshape(rho.shape[0],1))**2 , axis=1, weights=rho[:, 1:])).reshape(analysis['Median'].shape)
-        analysis['speed'] = analysis['Mean'][1:] - analysis['Mean'][:-1]
-        analysis['acc'] = analysis['speed'][1:] - analysis['speed'][:-1]
-        print("Analysis end")
-        return analysis
     
-def plot_analysis(analysis, L, times, nums, save=False):
+def plot_analyses(analyses,save=False, title='', name=''):
     lwdt = 1
 
-    analysis_rep = analysis[1:-1] if type(analysis[-1]) == int else analysis[1:]
     fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
-    fig.suptitle('L={}, times={}, nums={}'.format(L, times, nums))
+    if title:
+        fig.suptitle(title)
     
-    for a in analysis_rep:
-        ax[0].plot(a['Mean'], label=a['d'], linewidth=lwdt)
+    for a in analyses:
+        ax[0].plot(a.analysis['Mean'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
     ax[0].legend()
     ax[0].set_title("Mean position")
 
-    for a in analysis_rep:
-        ax[1].plot(a['speed'], label=a['d'], linewidth=lwdt)
+    for a in analyses:
+        ax[1].plot(a.analysis['speed'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
     ax[1].set_title("Speed")
 
-    for a in analysis_rep:
-        ax[2].plot(a['acc'], label=a['d'], linewidth=lwdt)
+    for a in analyses:
+        ax[2].plot(a.analysis['acc'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
-    if save:
-        plt.savefig("figs/" + analysis[0] + '.png', format='png')
+    if save and name:
+        plt.savefig("figs/" + path + '.png', format='png')
     plt.show()
     
 def plot_dist(rh):
