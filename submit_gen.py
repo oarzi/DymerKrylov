@@ -46,22 +46,22 @@ def get_commands(args):
     script = "echo \"Execute job on host $HOSTNAME at $(date)\"\n"
     
     script = script + "python parallel_analysis.py {}\n".format(args)
-        
-    script = script + "echo finished job at $(date)."format(args)
+    print("command={}".format(script))    
+    script = script + "echo finished job at $(date)."
     return script
 
-def get_sge_scripts(args, file_names):
+def get_sge_scripts(args):
     sge_files = []
-    for arg, name in zip(args, file_names):
+    for arg in args:
         while True:
             name = np.random.randint(1000,10000)
             try:
-                with open("temp_sge/" + file_names + str(name) + ".sge", mode="x+", newline=os.linesep) as sge_script:
+                with open("temp_sge_files/" + str(name) + ".sge", mode="w+", newline=os.linesep) as sge_script:
                     arg_parse = dimers_sim.get_experiment_args()
                     cores = arg_parse.procs_sim * max(arg_parse.batch_procs)
                     pref = get_prefix(cores=cores)
-                    outs = get_output_files((e='outputs/analysis_error_{}.txt'.format(name),
-                                             o='outputs/analysis_output_{}.txt'.format(name)))
+                    outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
+                                             o='outputs/analysis_output_{}.txt'.format(name))
                     multi = get_multi_proc(cores=cores)
                     script = get_commands(arg)
 
@@ -70,7 +70,7 @@ def get_sge_scripts(args, file_names):
                     sge_script.write(multi)
                     sge_script.write(script)
 
-                    sge_files.append("temp_sge/" + path_to_file + str(name) + ".sge")
+                    sge_files.append("temp_sge_files/" + str(name) + ".sge")
                     
                     break
             except FileExistsError:
@@ -80,19 +80,23 @@ def get_sge_scripts(args, file_names):
 
 def main(args_list, chdir_path = "", wd_path=''):
     
-    os.system("mkdir temp_sge_files")
+    #try:
+    #    os.system("mkdir temp_sge_files")
+    #except:
+        #os.system("rm -r temp_sge_files")    
+     #   os.system("mkdir temp_sge_files")
+
+    sge_files = get_sge_scripts(args_list)
     
-    sge_files = get_sge_scripts(args, path_to_file)
-    
-    for sge_file in sge_files:
-        os.system("qsub temp_sge_files/{}".format(sge_files))
+    #for sge_file in sge_files:
+     #  s   os.system("qsub {}".format(sge_files))
         
-    os.system("rm -r temp_sge_files{}")
+    #os.system("rm -r temp_sge_files{}")
         
     return
 
     
 if __name__ == '__main__':
-    args1 = "bs --L 100 --d 95 --times 1000 --batch 500 2500 10000 50000 --procs_sim 2 --batch_procs 1 2 3 4"
+    args1 = "bs --L 100 --d 95 --times 100 --batch 100 --procs_sim 1 --batch_procs 1"
     args_list = [args1]
-    main("args_list")
+    main(args_list)
