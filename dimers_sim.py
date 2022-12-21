@@ -254,8 +254,8 @@ def get_experiment_args():
     parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
                                            type=int, nargs='+', default=1)
     
-    args = parser.parse_args()
+    #args = parser.parse_args()
     
-    print(args)
-    
-    return args
+    #print(args)
+
+    return parser

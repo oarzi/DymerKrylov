@@ -46,7 +46,6 @@ def get_commands(args):
     script = "echo \"Execute job on host $HOSTNAME at $(date)\"\n"
     
     script = script + "python parallel_analysis.py {}\n".format(args)
-    print("command={}".format(script))    
     script = script + "echo finished job at $(date)."
     return script
 
@@ -55,9 +54,13 @@ def get_sge_scripts(args):
     for arg in args:
         while True:
             name = np.random.randint(1000,10000)
+            
             try:
                 with open("temp_sge_files/" + str(name) + ".sge", mode="w+", newline=os.linesep) as sge_script:
-                    arg_parse = dimers_sim.get_experiment_args()
+                    parser = dimers_sim.get_experiment_args()
+                    print("hiiiiii0")
+                    arg_parse = parser.parse_args(arg.split())
+                    print("hiiiiii1")
                     cores = arg_parse.procs_sim * max(arg_parse.batch_procs)
                     pref = get_prefix(cores=cores)
                     outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
@@ -98,5 +101,6 @@ def main(args_list, chdir_path = "", wd_path=''):
     
 if __name__ == '__main__':
     args1 = "bs --L 100 --d 95 --times 100 --batch 100 --procs_sim 1 --batch_procs 1"
-    args_list = [args1]
+    args2 = "bs --L 100 --d 95 --times 100 --batch 200 --procs_sim 1 --batch_procs 1"
+    args_list = [args1, args2]
     main(args_list)
