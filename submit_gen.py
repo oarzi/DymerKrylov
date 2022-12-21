@@ -3,11 +3,14 @@ import errno
 import os
 import time
 import shutil
+import numpy as np
+
 def get_prefix(cores=1, q='cond-mat-short', wd_path=''):
     if wd_path:
         wd = 'wd {}'.format(wd_path)
     else:
         wd = 'cwd'
+        
     prefix = """#!/bin/bash
 #$ -S /bin/bash
 #$ -{} 
@@ -22,7 +25,7 @@ def get_prefix(cores=1, q='cond-mat-short', wd_path=''):
 """.format(wd, cores, q)
     return prefix
 
-def get_output(e='analysis_error.txt', o='analysis_output.txt'):
+def get_output_files(e='analysis_error.txt', o='analysis_output.txt'):
     output_files = """##$ -o {}
 ##$ -e {}
 """.format(e, o)
@@ -39,38 +42,57 @@ export OMP_NUM_THREADS={0}
     
     return multi
 
-def get_script(path):
-    script = """echo "Execute job on host $HOSTNAME at $(date)"
-python {}
-echo "finished job at $(date)
-""".format(path)
+def get_commands(args):
+    script = "echo \"Execute job on host $HOSTNAME at $(date)\"\n"
+    
+    script = script + "python parallel_analysis.py {}\n".format(args)
+        
+    script = script + "echo finished job at $(date)."format(args)
     return script
-    
 
-def main(path_to_file, chdir_path = "", wd_path=''):
-    if chdir_path:
-        os.chdir(chdir_path)
-    try:
-        with open(path_to_file, mode="x+", newline=os.linesep) as sge_script:
-            pref = get_prefix(wd_path)
-            outs = get_output()
-            multi = get_multi_proc()
-            script = get_script("lalala")
-            
-            sge_script.write(pref)
-            sge_script.write(outs)
-            sge_script.write(multi)
-            sge_script.write(script)
-            
-    except FileExistsError:
-        print("{} Already exists".format(path_to_file))
-        pass
-    
+def get_sge_scripts(args, file_names):
+    sge_files = []
+    for arg, name in zip(args, file_names):
+        while True:
+            name = np.random.randint(1000,10000)
+            try:
+                with open("temp_sge/" + file_names + str(name) + ".sge", mode="x+", newline=os.linesep) as sge_script:
+                    arg_parse = dimers_sim.get_experiment_args()
+                    cores = arg_parse.procs_sim * max(arg_parse.batch_procs)
+                    pref = get_prefix(cores=cores)
+                    outs = get_output_files((e='outputs/analysis_error_{}.txt'.format(name),
+                                             o='outputs/analysis_output_{}.txt'.format(name)))
+                    multi = get_multi_proc(cores=cores)
+                    script = get_commands(arg)
 
-    os.system("qsub {}".format(path_to_file))
+                    sge_script.write(pref)
+                    sge_script.write(outs)
+                    sge_script.write(multi)
+                    sge_script.write(script)
+
+                    sge_files.append("temp_sge/" + path_to_file + str(name) + ".sge")
+                    
+                    break
+            except FileExistsError:
+                print("{} Already exists! Will try again".format(path_to_file))
+        
+    return sge_files
+
+def main(args_list, chdir_path = "", wd_path=''):
     
+    os.system("mkdir temp_sge_files")
     
+    sge_files = get_sge_scripts(args, path_to_file)
+    
+    for sge_file in sge_files:
+        os.system("qsub temp_sge_files/{}".format(sge_files))
+        
+    os.system("rm -r temp_sge_files{}")
+        
+    return
+
     
 if __name__ == '__main__':
-    main("ofirrrr.sge")
-
+    args1 = "bs --L 100 --d 95 --times 1000 --batch 500 2500 10000 50000 --procs_sim 2 --batch_procs 1 2 3 4"
+    args_list = [args1]
+    main("args_list")

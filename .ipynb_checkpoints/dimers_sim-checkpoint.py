@@ -10,6 +10,8 @@ except ModuleNotFoundError:
     pass
 import os
 from dataclasses import dataclass, field
+import argparse
+
 
 @dataclass
 class Experiment: 
@@ -27,9 +29,8 @@ class Analysis:
     L : int
     times: int
     d : int
-    nums : int
+    batch : int
     rho : np.ndarray
-    label : str
     file_name : str
     dir_name : str
     analysis: dict = field(default_factory=dict, init=False)
@@ -50,10 +51,9 @@ class Analysis:
         print("Analysis start")
         self.analysis['d'] = self.d
         self.analysis['rho'] = self.rho
-        self.analysis['nums'] = self.nums
+        self.analysis['batch'] = self.batch
         self.analysis['times'] = self.times
         self.analysis['L'] = self.L
-        self.analysis['label'] = self.label
         
         self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
         sites = [np.arange(1, self.rho.shape[1])]
@@ -70,19 +70,19 @@ class Simulator:
     L : int
     times: int
     d : int
-    nums : int
+    batch : int
     
     prob : int = 1
     file_name : str = ""
     dir_name : str = "analyses/"
-    batch_subprocs_num : int = 1
+    batch_procs_num : int = 1
     save : bool = False
     local: bool = True
     analysis : Analysis = None
 
     def __post_init__(self):
-        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_n{}_d{}___'.format(self.L, self.times, 
-                                                                          self.nums, self.d,   
+        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_b{}_d{}___'.format(self.L, self.times, 
+                                                                          self.batch, self.d,   
                                                                           time.strftime("%Y_%m_%d__%H_%M"))
     def progress_bar(self, iterable):
         if self.local:
@@ -133,26 +133,26 @@ class Simulator:
     
     
     def simulate(self):
-        print("Starting id: {}, L =  {}, times = {}, d = {}, nums = {} |".format(os.getpid(), self.L, self.times, self.d, self.nums, time.strftime("%Y_%m_%d__%H_%M")))
+        print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} |".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
         H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
-        with Pool(self.batch_subprocs_num) as p:
-            c_rhos =  p.map(self.classical_evolutions_batch, (H for i in range(self.batch_subprocs_num)), chunksize=1)
+        with Pool(self.batch_procs_num) as p:
+            c_rhos =  p.map(self.classical_evolutions_batch, (H for i in range(self.batch_procs_num)), chunksize=1)
             p.close()
             p.join()
         
         rho = np.array(c_rhos)
         print("before batch sum", rho.shape)
-        rho = np.sum(rho, axis=0)/self.nums
+        rho = np.sum(rho, axis=0)/self.batch
         print("after batch sum", rho.shape)
 
-        analysis = Analysis(L=self.L, times=self.times, d=self.d, nums=self.nums, rho=rho, label='nums', file_name = self.file_name, dir_name=self.dir_name)
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
         
         if self.save:
             analysis.save()
             
-        print("Finished id {}: L =  {}, times = {}, d = {}, nums = {} | {}".format(os.getpid(), self.L, self.times, 
-                                                                                        self.d, self.nums, 
+        print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L, self.times, 
+                                                                                        self.d, self.batch, 
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return analysis
 
@@ -162,7 +162,7 @@ class Simulator:
         p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
         allgates = H_ring + H_hopp
 
-        initial_psi = [get_initial_config(self.L, self.d)]*(self.nums//self.batch_subprocs_num)
+        initial_psi = [get_initial_config(self.L, self.d)]*(self.batch//self.batch_procs_num)
         psi = np.array(initial_psi, dtype=np.int32)
         # print("psi0.shape=", psi.shape)
         
@@ -175,7 +175,7 @@ class Simulator:
         for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            gates_i = np.random.choice(allgates, size=self.nums, p=p_array)
+            gates_i = np.random.choice(allgates, size=self.batch, p=p_array)
             psi = np.array(list(map(apply, zip(gates_i, psi))))
             # print("psi.shape=", psi.shape)
             charge = np.apply_along_axis(defect_density, 1 , psi)
@@ -192,7 +192,7 @@ class Simulator:
     
 
     
-def plot_analyses(analyses,save=False, title='', name=''):
+def plot_analyses(analyses, label, save=False, title='', name=''):
     lwdt = 1
 
     fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
@@ -200,21 +200,21 @@ def plot_analyses(analyses,save=False, title='', name=''):
         fig.suptitle(title)
     
     for a in analyses:
-        ax[0].plot(a.analysis['Mean'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
+        ax[0].plot(a.analysis['Mean'], label=a.analysis[label], linewidth=lwdt)
     ax[0].legend()
     ax[0].set_title("Mean position")
 
     for a in analyses:
-        ax[1].plot(a.analysis['speed'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
+        ax[1].plot(a.analysis['speed'], label=a.analysis[label], linewidth=lwdt)
     ax[1].set_title("Speed")
 
     for a in analyses:
-        ax[2].plot(a.analysis['acc'], label=a.analysis[a.analysis['label']], linewidth=lwdt)
+        ax[2].plot(a.analysis['acc'], label=a.analysis[label], linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
     if save and name:
-        plt.savefig("figs/" + path + '.png', format='png')
+        plt.savefig("figs/" + name + '.png', format='png')
     plt.show()
     
 def plot_dist(rh):
@@ -237,3 +237,25 @@ def plot_rho(analysis,c=False):
     plt.colorbar()
     plt.legend()
     plt.show()
+
+def get_experiment_args():
+    parser = argparse.ArgumentParser(prog='Parallel execution of experiments and their analysis.', allow_abbrev=False)
+    subparsers = parser.add_subparsers(help='Choose experiment', required=True, dest='experiment')
+
+    parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
+    
+    parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
+    parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
+    parser_varying_batch_size.add_argument("--batch", help="Number of trajectories over which path is averaged.", type=int,
+                                           nargs='+', required=True)
+    parser_varying_batch_size.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int,
+                                           nargs=1, default=1)
+    parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
+                                           type=int, nargs='+', default=1)
+    
+    args = parser.parse_args()
+    
+    print(args)
+    
+    return args
