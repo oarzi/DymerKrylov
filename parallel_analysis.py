@@ -10,9 +10,9 @@ def varying_batch_size(L_sim, times_sim, d_sim, batch_size, procs_sim, batch_pro
     # batch_procs_num = 8
     if type(batch_procs_num) == list and len(batch_procs_num) < len(batch_size):
         batch_procs_num = batch_procs_num + (len(batch_size) - len(batch_procs_num))*batch_procs_num[-1:]
-    dir_name = "analyses/batch_size"
+    dir_name = "analyses/varying_batch_size/"
     
-    simulators = [dimers_sim.Simulator(local = True, L=L_sim, times=times_sim, d=d_sim, batch=b, batch_procs_num = bn, dir_name=dir_name) for b, bn in zip(batch_size, batch_procs_num)]
+    simulators = [dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, d=d_sim, batch=b, batch_procs_num = bn, dir_name=dir_name) for b, bn in zip(batch_size, batch_procs_num)]
     
     results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
     file_name = 'experiment_L{}_t{}_b{}____{}'.format(L_sim, times_sim, batch_size, time.strftime("%Y_%m_%d__%H_%M"))
@@ -30,8 +30,8 @@ def varying_batch_size(L_sim, times_sim, d_sim, batch_size, procs_sim, batch_pro
 if __name__ == '__main__':
     
 
-    args = dimers_sim.get_experiment_args()
-    
+    parser = dimers_sim.get_experiment_args()
+    args = parser.parse_args()
     Experiments = {'bs' : varying_batch_size}
     experiment_execute = Experiments[args.experiment]
     experiment_execute(args.L[0], args.times[0], args.d[0], args.batch, args.procs_sim[0], args.batch_procs)

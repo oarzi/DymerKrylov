@@ -215,7 +215,7 @@ def plot_analyses(analyses, label, save=False, title='', name=''):
     fig.tight_layout()
     if save and name:
         plt.savefig("figs/" + name + '.png', format='png')
-    plt.show()
+    #plt.show()
     
 def plot_dist(rh):
     return
