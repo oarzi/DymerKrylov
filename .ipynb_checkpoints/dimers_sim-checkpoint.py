@@ -192,7 +192,7 @@ class Simulator:
     
 
     
-def plot_analyses(analyses, label, save=False, title='', name=''):
+def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False):
     lwdt = 1
 
     fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
@@ -210,6 +210,39 @@ def plot_analyses(analyses, label, save=False, title='', name=''):
 
     for a in analyses:
         ax[2].plot(a.analysis['acc'], label=a.analysis[label], linewidth=lwdt)
+    ax[2].set_title("acceleration")
+    
+    fig.tight_layout()
+    if log_scale_x:
+        ax[0].set_xscale("log", base=log_scale_x)
+        ax[1].set_xscale("log", base=log_scale_x)
+        ax[2].set_xscale("log", base=log_scale_x)
+    if log_scale_y:
+        ax[0].set_yscale("log", base=log_scale_y)
+        ax[1].set_yscale("log", base=log_scale_y)
+        ax[2].set_yscale("log", base=log_scale_y)
+    if save and name:
+        plt.savefig("figs/" + name + '.png', format='png')
+    plt.show()
+    
+def plot_analyses_old(analyses, label, save=False, title='', name=''):
+    lwdt = 1
+
+    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
+    if title:
+        fig.suptitle(title)
+    
+    for a in analyses:
+        ax[0].plot(a['Mean'], label=a[label], linewidth=lwdt)
+    ax[0].legend()
+    ax[0].set_title("Mean position")
+
+    for a in analyses:
+        ax[1].plot(a['speed'], label=a[label], linewidth=lwdt)
+    ax[1].set_title("Speed")
+
+    for a in analyses:
+        ax[2].plot(a['acc'], label=a[label], linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()
@@ -254,8 +287,23 @@ def get_experiment_args():
     parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
                                            type=int, nargs='+', default=1)
     
-    args = parser.parse_args()
+    #args = parser.parse_args()
     
-    print(args)
-    
-    return args
+    #print(args)
+
+    return parser
+
+def plot_dist(ana, times):
+
+    fig, ax = plt.subplots(1,1, figsize=(13, 10))
+
+    L = ana.rho.shape[1]
+    x= range(L - 1)
+    for t in times:
+        ax.plot(x, ana.rho[t, 1:], label='t={}'.format(t))
+        ax.set_title("Iniital position = {}".format(ana.d))
+        ax.legend()
+        ax.set_xlabel('Site')
+        ax.set_ylabel('Probability')
+    # plt.savefig('figs/position_distribution_over_t_L{}.png'.format(L))
+    plt.show()
