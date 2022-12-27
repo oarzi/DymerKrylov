@@ -1,0 +1,1 @@
+-bash: temp_sge_files/sge8723.sge: Permission denied

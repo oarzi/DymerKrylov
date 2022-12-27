@@ -1,0 +1,48 @@
+Execute job on host curie22.t30.ph.tum.de at Wed 21 Dec 15:24:57 CET 2022
+Starting id: 3963593, L =  100, # times = 100, d = 95, #batch = 100 , # of batches = 1 |
+Waiting for all processes to close
+0 items waiting
+All processes closed
+0 items waiting
+Finished simulate_parallel for 1 simulations | 21_12_2022__15_24
+finished job at Wed 21 Dec 15:24:57 CET 2022.
+Execute job on host curie22.t30.ph.tum.de at Wed 21 Dec 15:25:42 CET 2022
+Starting id: 3963876, L =  100, # times = 100, d = 95, #batch = 100 , # of batches = 1 |
+3963876->3963879 is  0.0% completed
+3963876->3963879 is  4.0% completed
+3963876->3963879 is  8.0% completed
+3963876->3963879 is  12.0% completed
+3963876->3963879 is  16.0% completed
+3963876->3963879 is  20.0% completed
+3963876->3963879 is  24.0% completed
+3963876->3963879 is  28.0% completed
+3963876->3963879 is  32.0% completed
+3963876->3963879 is  36.0% completed
+3963876->3963879 is  40.0% completed
+3963876->3963879 is  44.0% completed
+3963876->3963879 is  48.0% completed
+3963876->3963879 is  52.0% completed
+3963876->3963879 is  56.0% completed
+3963876->3963879 is  60.0% completed
+3963876->3963879 is  64.0% completed
+3963876->3963879 is  68.0% completed
+3963876->3963879 is  72.0% completed
+3963876->3963879 is  76.0% completed
+3963876->3963879 is  80.0% completed
+3963876->3963879 is  84.0% completed
+3963876->3963879 is  88.0% completed
+3963876->3963879 is  92.0% completed
+3963876->3963879 is  96.0% completed
+rho.shape= (101, 100)
+3963876->3963879 finished
+before batch sum (1, 101, 100)
+after batch sum (101, 100)
+Analysis start
+Analysis end
+Finished id 3963876: L =  100, # times = 100, d = 95, # batch = 100 | 21_12_2022__15_25
+Waiting for all processes to close
+0 items waiting
+All processes closed
+1 items waiting
+Finished simulate_parallel for 1 simulations | 21_12_2022__15_25
+finished job at Wed 21 Dec 15:25:43 CET 2022.

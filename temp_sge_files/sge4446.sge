@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#$ -S /bin/bash
+#$ -cwd 
+
+#$ -M ofir.arzi@tum.de
+#$ -m ea  
+    
+#$ -pe smp 5
+#$ -R y
+#$ -b y
+#$ -q cond-mat
+#$ -o outputs/analysis_error_4446.txt
+#$ -e outputs/analysis_output_4446.txt
+## export PATH="/mount/packs/intelpython36/bin:$PATH"
+export MKL_DYNAMIC=FALSE
+export MKL_NUM_THREADS=5  
+export OMP_NUM_THREADS=5
+echo "Execute job on host $HOSTNAME at $(date)"
+python parallel_analysis.py bs --L 100 --d 95 --times 4000 --batch 100000 400000 1200000 --procs_sim 3 --batch_procs 10 40 50
+echo finished job at $(date).
