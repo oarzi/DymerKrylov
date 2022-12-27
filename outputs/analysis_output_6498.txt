@@ -1,0 +1,1 @@
+temp_sge_files/sge6498.sge: error reading input file: Stale file handle
