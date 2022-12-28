@@ -58,7 +58,7 @@ def get_sge_scripts(args):
             try:
                 file_name = "temp_sge_files/sge" + str(name) + ".sge"
                 with open(file_name, mode="w+", newline=os.linesep) as sge_script:
-                    arg_with_name = arg + " --name {}".format(name)
+                    arg_with_name = arg + " --name cluster{}".format(name)
                     parser = dimers_sim.get_experiment_args()
                     arg_parse = parser.parse_args(arg_with_name.split())
                     print(arg_parse)
