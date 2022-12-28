@@ -1,5 +1,5 @@
-import pickle
 from dimers_util import *
+import pickle
 from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
@@ -11,7 +11,7 @@ except ModuleNotFoundError:
 import os
 from dataclasses import dataclass, field
 import argparse
-
+import sys
 
 @dataclass
 class Experiment: 
@@ -165,6 +165,7 @@ class Simulator:
         return analysis
 
     def classical_evolutions_batch(self, H):
+        rng = np.random.default_rng()
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
 
         p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
@@ -174,8 +175,8 @@ class Simulator:
         psi = np.array(initial_psi, dtype=np.int32)
         # print("psi0.shape=", psi.shape)
         
-        rho = np.apply_along_axis(defect_density, 1 , psi)
-        rho = np.sum(rho, axis=0).reshape(1, self.L)
+        charge = np.apply_along_axis(defect_density, 1 , psi)
+        rho = np.sum(charge, axis=0)
         
         def apply(f):
             return f[0](f[1])
@@ -183,12 +184,27 @@ class Simulator:
         for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            gates_i = np.random.choice(allgates, size=self.batch//self.batch_procs_num, p=p_array)
+            gates_i = rng.choice(allgates, size=self.batch//self.batch_procs_num, p=p_array)
             psi = np.array(list(map(apply, zip(gates_i, psi))))
             # print("psi.shape=", psi.shape)
             charge = np.apply_along_axis(defect_density, 1 , psi)
+            charge0 = charge[:,0]
+            if np.sum(charge0) !=  psi.shape[1] // 3:
+                with open("bad_matrix.txt", "w") as f:
+                    np.set_printoptions(threshold=sys.maxsize)
+                    f.write( str(np.sum(charge0)) + "\n")
+                    f.write(str(charge0.shape) + "\n")
+                    f.write(str(psi.shape) + "\n")
+                    f.write(str(np.argwhere(charge0 != 1)) + "\n")
+                    f.write("========================================\n")
+                    f.write(str(charge0) + "\n")                                
+                    f.write("========================================\n")
+                    f.write(str(charge[np.argwhere(charge0 != 1)]) + "\n")
+                    f.write("========================================\n")
+                    f.write(str(psi[np.argwhere(charge0 != 1)]))
+                raise ValueError()
             # print("charge.shape=", charge.shape)
-            rho = np.vstack((rho, np.sum(np.apply_along_axis(defect_density, 1 , psi), axis=0).reshape(1, self.L)))
+            rho = np.vstack((rho, np.sum(charge, axis=0)))
 
             # psi = np.vstack((psi, [psi_next]))
         print("rho.shape=", rho.shape)
@@ -294,6 +310,9 @@ def get_experiment_args():
     parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
                                            type=int, nargs='+', default=1)
     
+    parser_varying_batch_size.add_argument("--name", help="File prefix",
+                                           type=str, nargs='+', default='')
+    
     parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment',
                                                               allow_abbrev=False)
     
@@ -307,6 +326,9 @@ def get_experiment_args():
     parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
                                                    type=int, nargs=1, default=1)
     parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
+    
+    parser_varying_initial_conditions.add_argument("--name", help="File prefix",
+                                           type=str, nargs='+', default='')
     
 
 

@@ -58,14 +58,15 @@ def get_sge_scripts(args):
             try:
                 file_name = "temp_sge_files/sge" + str(name) + ".sge"
                 with open(file_name, mode="w+", newline=os.linesep) as sge_script:
+                    arg_with_name = arg + " --name {}".format()
                     parser = dimers_sim.get_experiment_args()
-                    arg_parse = parser.parse_args(arg.split())
+                    arg_parse = parser.parse_args((arg_with_name).split())
                     cores = 2 + (arg_parse.procs_sim * max(arg_parse.batch_procs))[0]
                     pref = get_prefix(cores=cores)
                     outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                             o='outputs/analysis_output_{}.txt'.format(name))
                     multi = get_multi_proc(cores=cores)
-                    script = get_commands(arg, file_name)
+                    script = get_commands(arg_with_name, file_name)
 
                     sge_script.write(pref)
                     sge_script.write(outs)
