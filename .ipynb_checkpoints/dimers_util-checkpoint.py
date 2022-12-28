@@ -1,7 +1,5 @@
 from dataclasses import dataclass
 import numpy as np
-from numpy.random import SeedSequence
-ss = SeedSequence(12345)
 import matplotlib.pyplot as plt
 import numpy as np
 import struct
@@ -11,7 +9,7 @@ import scipy.sparse as sparse
 def charge_density(configs,psi):
     return np.sum(configs.T*np.abs(psi)**2,axis=1)
         
-def defect_density(configs,psi):
+def defect_density_old(configs,psi):
     L = configs.shape[1]//3
     
     edge_01 = np.arange(1,3*L,3)%(3*L)
@@ -37,9 +35,10 @@ def defect_density(psi):
     edge_02 = np.arange(2,3*L,3)%(3*L)
     edge_12 = np.arange(5,3*(L+1),3)%(3*L)
     
-    psi1 = psi[edge_01] + psi[edge_10] + psi[edge_11] - 1
-    psi2 = psi[edge_02] + psi[edge_10] + psi[edge_12] - 1
-    return np.roll(psi1 + psi2, 1)
+    psi_down = psi[edge_01] + psi[edge_10] + psi[edge_11] - 1
+    psi_up = psi[edge_02] + psi[edge_10] + psi[edge_12] - 1
+    
+    return np.roll(psi_down + psi_up, 1)
 
 def plot_conf(c):
     L = len(c)//3
@@ -178,9 +177,13 @@ def get_h_hop(L):
     hop6 = np.stack([3 * ((i + 2) % L) + 2, 3 * ((i + 3) % L) + 0, 3 * ((i + 3) % L) + 2,
                      3 * ((i + 1) % L) + 2, 3 * ((i + 0) % L) + 2, 3 * ((i + 1) % L)]).T
     
+
     hops = np.vstack((hop1, hop2, hop3, hop4, hop5, hop6))
+    print(hops.shape)
     h_hops = np.delete(hops, np.any(hops <= 2, axis=1), axis=0)
-     
+    h_hops = np.delete(h_hops, np.any(h_hops >= 3*L, axis=1), axis=0)
+    print(h_hops.shape)
+    
     H_hops = list(map(hop, h_hops))
     return H_hops
     
@@ -190,6 +193,6 @@ class hop:
     def __call__(self, config):
         return self.apply(config)
     def apply(self, config):
-        if (config[self.sites[0]] != config[self.sites[3]]) and (config[self.sites[1]] + config[self.sites[2]]) % 2 and (config[self.sites[4]] + config[self.sites[5]]):  
+        if (config[self.sites[0]] != config[self.sites[3]]) and (config[self.sites[1]] + config[self.sites[2]] == 1) and (config[self.sites[4]] + config[self.sites[5]] == 1):  
             config[self.sites[[0,3]]] = 1 - config[self.sites[[0,3]]]
         return config

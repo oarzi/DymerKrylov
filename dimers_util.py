@@ -177,11 +177,13 @@ def get_h_hop(L):
     hop6 = np.stack([3 * ((i + 2) % L) + 2, 3 * ((i + 3) % L) + 0, 3 * ((i + 3) % L) + 2,
                      3 * ((i + 1) % L) + 2, 3 * ((i + 0) % L) + 2, 3 * ((i + 1) % L)]).T
     
-    
+
     hops = np.vstack((hop1, hop2, hop3, hop4, hop5, hop6))
+    print(hops.shape)
     h_hops = np.delete(hops, np.any(hops <= 2, axis=1), axis=0)
     h_hops = np.delete(h_hops, np.any(h_hops >= 3*L, axis=1), axis=0)
-     
+    print(h_hops.shape)
+    
     H_hops = list(map(hop, h_hops))
     return H_hops
     

@@ -201,7 +201,7 @@ class Simulator:
                     f.write("========================================\n")
                     f.write("Bad Charge:\n" + str(charge[np.argwhere(charge0 != 1)]) + "\n")
                     f.write("========================================\n")
-                    f.write("gGates:\n" + str(gates_i[np.argwhere(charge0 != 1)]))
+                    f.write("Gates:\n" + str(gates_i[np.argwhere(charge0 != 1)]))
                 raise ValueError()
             # print("charge.shape=", charge.shape)
             rho = np.vstack((rho, np.sum(charge, axis=0)))
