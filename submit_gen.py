@@ -58,10 +58,11 @@ def get_sge_scripts(args):
             try:
                 file_name = "temp_sge_files/sge" + str(name) + ".sge"
                 with open(file_name, mode="w+", newline=os.linesep) as sge_script:
-                    arg_with_name = arg + " --name {}".format()
+                    arg_with_name = arg + " --name {}".format(name)
                     parser = dimers_sim.get_experiment_args()
-                    arg_parse = parser.parse_args((arg_with_name).split())
-                    cores = 2 + (arg_parse.procs_sim * max(arg_parse.batch_procs))[0]
+                    arg_parse = parser.parse_args(arg_with_name.split())
+                    print(arg_parse)
+                    cores = 2 + (arg_parse.procs_sim * (1 + max(arg_parse.batch_procs)))[0]
                     pref = get_prefix(cores=cores)
                     outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                             o='outputs/analysis_output_{}.txt'.format(name))
@@ -102,10 +103,10 @@ def main(args_list, chdir_path = "", wd_path=''):
     
 if __name__ == '__main__':
     #args_bc = "bs --L 100 --d 95 --times 4000 --batch 100000 400000 1200000 --procs_sim 3 --batch_procs 10 40 50"
-    args_ic1 = "ic --L 200 --d 120 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
-    args_ic2 = "ic --L 200 --d 100 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
-    args_ic3 = "ic --L 200 --d 80 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
-    args_ic4 = "ic --L 200 --d 60 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
-    args_ic5 = "ic --L 200 --d 40 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
+    args_ic1 = "ic --L 80 --d 60 --times 12000 --batch 60000 --procs_sim 1 --batch_procs 15"
+    args_ic2 = "ic --L 130 --d 60 --times 12000 --batch 200000 --procs_sim 1 --batch_procs 20"
+    args_ic3 = "ic --L 180 --d 60 --times 12000 --batch 270000 --procs_sim 1 --batch_procs 30"
+    args_ic4 = "ic --L 230 --d 60 --times 12000 --batch 340000 --procs_sim 1 --batch_procs 40"
+    args_ic5 = "ic --L 280 --d 60 --times 12000 --batch 420000 --procs_sim 1 --batch_procs 50"
     args_list = [args_ic1, args_ic2, args_ic3, args_ic4, args_ic5]
     main(args_list)
