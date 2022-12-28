@@ -17,3 +17,7 @@ __pycache__/dimers_util.cpython-39.pyc
 *.ipynb
 .ipynb_checkpoints/dimers_sim-checkpoint.py
 __pycache__/dimers_sim.cpython-39.pyc
+.ipynb_checkpoints/Classical_dynamics-checkpoint.ipynb
+.ipynb_checkpoints/dimers_sim-checkpoint.py
+.ipynb_checkpoints/dimers_util-checkpoint.py
+Classical_dynamics.ipynb

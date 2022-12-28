@@ -98,12 +98,19 @@ class Simulator:
         sema = Semaphore(procs_num)
         procs = []
         jobs = len(simulators)
+        print("simulate_parallel # jobs = {}".format(jobs))
+        count = 0
         while simulators:
             sema.acquire()
             sim = simulators.pop(0)
             p = Process(target=Simulator.simulate_parallel_task, args=(sim, queue, sema),daemon=False)
             procs.append(p)
             p.start()
+            count += 1
+            print("count = {}".format(count))
+            
+        if count is not jobs:
+            raise ValueError
         
         print("Waiting for all processes to close")
         print("{} items waiting".format(queue.qsize()))
@@ -127,13 +134,14 @@ class Simulator:
     
     @classmethod
     def simulate_parallel_task(cls, sim, q, sema):
-        q.put(sim.simulate())
+        result = sim.simulate()
+        q.put(result)
         sema.release()
         return 0
     
     
     def simulate(self):
-        print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} |".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
+        print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
         H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
         with Pool(self.batch_procs_num) as p:
@@ -175,7 +183,7 @@ class Simulator:
         for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            gates_i = np.random.choice(allgates, size=self.batch, p=p_array)
+            gates_i = np.random.choice(allgates, size=self.batch//self.batch_procs_num, p=p_array)
             psi = np.array(list(map(apply, zip(gates_i, psi))))
             # print("psi.shape=", psi.shape)
             charge = np.apply_along_axis(defect_density, 1 , psi)
@@ -249,9 +257,6 @@ def plot_analyses_old(analyses, label, save=False, title='', name=''):
     if save and name:
         plt.savefig("figs/" + name + '.png', format='png')
     plt.show()
-    
-def plot_dist(rh):
-    return
 
 def plot_rho(analysis,c=False):
     plt.figure(figsize=[16,12])
@@ -277,6 +282,8 @@ def get_experiment_args():
 
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
     
+    parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment', allow_abbrev=False)
+    
     parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
     parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
@@ -287,23 +294,48 @@ def get_experiment_args():
     parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
                                            type=int, nargs='+', default=1)
     
-    #args = parser.parse_args()
+    parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment',
+                                                              allow_abbrev=False)
     
-    #print(args)
+    parser_varying_initial_conditions.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_initial_conditions.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
+                                                   required=True)
+    parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs='+',
+                                                   required=True)
+    parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
+                                                   type=int, nargs=1, required=True)
+    parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
+                                                   type=int, nargs=1, default=1)
+    parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
+    
+
 
     return parser
 
-def plot_dist(ana, times):
+def plot_dist(ana, times, title, save=False):
 
-    fig, ax = plt.subplots(1,1, figsize=(13, 10))
+    fig, ax = plt.subplots(1,1, figsize=(8, 5))
 
     L = ana.rho.shape[1]
-    x= range(L - 1)
+    x = range(L - 1)
     for t in times:
         ax.plot(x, ana.rho[t, 1:], label='t={}'.format(t))
-        ax.set_title("Iniital position = {}".format(ana.d))
-        ax.legend()
+        ax.set_title("Initial position = {}".format(ana.d))
         ax.set_xlabel('Site')
         ax.set_ylabel('Probability')
-    # plt.savefig('figs/position_distribution_over_t_L{}.png'.format(L))
+    ax.legend()
+    if save:
+        plt.savefig('figs/position_distribution_over_t_L{}.png'.format(L))
+    if title:
+        plt.title(title)
     plt.show()
+
+def test_rand(n):
+    with Pool(5) as p:
+        c_rhos =  p.map(print_rand, (n for _ in range(n)), chunksize=1)
+        p.close()
+        p.join()
+        
+def print_rand(i):
+    for _ in range(3):
+        print(np.random.randint(0, 100, i))
