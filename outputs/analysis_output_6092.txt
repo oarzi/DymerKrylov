@@ -1,6 +1,0 @@
-Unable to init server: Could not connect: Connection refused
-Unable to init server: Could not connect: Connection refused
-
-(parallel_analysis.py:1473224): Gdk-CRITICAL **: 15:58:12.763: gdk_cursor_new_for_display: assertion 'GDK_IS_DISPLAY (display)' failed
-/space/ge83qez/DymerKrylov/dimers_util.py:182: FutureWarning: in the future insert will treat boolean arrays and array-likes as boolean index instead of casting it to integer
-  h_hops = np.delete(hops, np.any(hops <= 2, axis=1), axis=0)

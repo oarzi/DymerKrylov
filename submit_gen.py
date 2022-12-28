@@ -103,10 +103,10 @@ def main(args_list, chdir_path = "", wd_path=''):
     
 if __name__ == '__main__':
     #args_bc = "bs --L 100 --d 95 --times 4000 --batch 100000 400000 1200000 --procs_sim 3 --batch_procs 10 40 50"
-    args_ic1 = "ic --L 80 --d 60 --times 12000 --batch 60000 --procs_sim 1 --batch_procs 15"
-    args_ic2 = "ic --L 130 --d 60 --times 12000 --batch 200000 --procs_sim 1 --batch_procs 20"
-    args_ic3 = "ic --L 180 --d 60 --times 12000 --batch 270000 --procs_sim 1 --batch_procs 30"
-    args_ic4 = "ic --L 230 --d 60 --times 12000 --batch 340000 --procs_sim 1 --batch_procs 40"
-    args_ic5 = "ic --L 280 --d 60 --times 12000 --batch 420000 --procs_sim 1 --batch_procs 50"
+    args_ic1 = "ic --L 80 --d 60 --times 12000 --batch 60000 --procs_sim 1 --batch_procs 1"
+    args_ic2 = "ic --L 130 --d 60 --times 12000 --batch 200000 --procs_sim 1 --batch_procs 2"
+    args_ic3 = "ic --L 180 --d 60 --times 12000 --batch 270000 --procs_sim 1 --batch_procs 3"
+    args_ic4 = "ic --L 230 --d 60 --times 12000 --batch 340000 --procs_sim 1 --batch_procs 4"
+    args_ic5 = "ic --L 280 --d 60 --times 12000 --batch 420000 --procs_sim 1 --batch_procs 5"
     args_list = [args_ic1, args_ic2, args_ic3, args_ic4, args_ic5]
     main(args_list)

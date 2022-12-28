@@ -181,6 +181,7 @@ def get_h_hop(L):
     hops = np.vstack((hop1, hop2, hop3, hop4, hop5, hop6))
     print(hops.shape)
     any_hops = np.any(hops <= 2, axis=1)
+    print(np.argwhere(any_hops))
     h_hops = np.delete(hops, any_hops, axis=0)
     #h_hops = np.delete(h_hops, np.any(h_hops >= 3*L, axis=1), axis=0)
     print(h_hops.shape)

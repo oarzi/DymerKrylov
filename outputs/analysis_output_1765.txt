@@ -1,1 +1,0 @@
--bash: temp_sge_files/sge1765.sge: Permission denied
