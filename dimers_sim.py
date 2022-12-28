@@ -189,7 +189,7 @@ class Simulator:
             # print("psi.shape=", psi.shape)
             charge = np.apply_along_axis(defect_density, 1 , psi)
             charge0 = charge[:,0]
-            if np.sum(charge0) !=  psi.shape[1] // 3:
+            if np.sum(charge0) !=  psi.shape[0]:
                 with open("bad_matrix{}.txt".format(os.getpid()), "w") as f:
                     np.set_printoptions(threshold=sys.maxsize)
                     f.write( str(np.sum(charge0)) + "\n")
