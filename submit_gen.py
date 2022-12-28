@@ -82,11 +82,11 @@ def get_sge_scripts(args):
 
 def main(args_list, chdir_path = "", wd_path=''):
     
-    try:
-       os.system("rm -r temp_sge_files")
-    except:
-        pass    
-    os.system("mkdir temp_sge_files")
+    #try:
+    #   os.system("rm -r temp_sge_files")
+    #except:
+    #   pass    
+    #os.system("mkdir temp_sge_files")
 
     sge_files = get_sge_scripts(args_list)
 
@@ -100,6 +100,11 @@ def main(args_list, chdir_path = "", wd_path=''):
 
     
 if __name__ == '__main__':
-    args1 = "bs --L 100 --d 95 --times 4000 --batch 100000 400000 1200000 --procs_sim 3 --batch_procs 10 40 50"
-    args_list = [args1]
+    #args_bc = "bs --L 100 --d 95 --times 4000 --batch 100000 400000 1200000 --procs_sim 3 --batch_procs 10 40 50"
+    args_ic1 = "ic --L 200 --d 120 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
+    args_ic2 = "ic --L 200 --d 100 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
+    args_ic3 = "ic --L 200 --d 80 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
+    args_ic4 = "ic --L 200 --d 60 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
+    args_ic5 = "ic --L 200 --d 40 --times 3000 --batch 500000 --procs_sim 5 --batch_procs 20"
+    args_list = [args_ic1, args_ic2, args_ic3, args_ic4, args_ic5]
     main(args_list)
