@@ -17,5 +17,5 @@ export OMP_NUM_THREADS=1   # This should be the *same* number as in the line ``#
 
 echo "Execute  job on host $HOSTNAME at $(date)"
 chmod u+x krylov
-./home/t30/all/ge83qez/Desktop/QDM/DymerKrylov/matrices/krylov 10 30 35 40
+./home/t30/all/ge83qez/Desktop/QDM/DymerKrylov/matrices/krylov 30
 echo "finished job at $(date)"

@@ -1,3 +1,5 @@
+analyses/varying_initial_conditions/
+analyses/varying_initial_conditions/*
 *.dat
 *.ipynb
 .ipynb_checkpoints/dimers_sim-checkpoint.py

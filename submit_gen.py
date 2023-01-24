@@ -5,7 +5,7 @@ import time
 import shutil
 import numpy as np
 
-def get_prefix(cores=1, q='cond-mat', wd_path=''):
+def get_prefix(mem, cores=1, q='cond-mat', wd_path=''):
     if wd_path:
         wd = 'wd {}'.format(wd_path)
     else:
@@ -14,7 +14,6 @@ def get_prefix(cores=1, q='cond-mat', wd_path=''):
     prefix = """#!/bin/bash\n
 #$ -S /bin/bash
 #$ -{} 
-
 #$ -M ofir.arzi@tum.de
 #$ -m ea  
     
@@ -58,12 +57,22 @@ def get_sge_scripts(args):
             try:
                 file_name = "temp_sge_files/sge" + str(name) + ".sge"
                 with open(file_name, mode="w+", newline=os.linesep) as sge_script:
+<<<<<<< HEAD
+                    arg_with_name = arg + " --name cluster{}".format(name)
+                    parser = dimers_sim.get_experiment_args()
+                    arg_parse = parser.parse_args(arg_with_name.split())
+                    print(arg_parse)
+                    mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
+                    cores = 2 + len(arg_parse.procs_sim) + sum(arg_parse.batch_procs)
+                    pref = get_prefix(mem ,cores=cores, q='cond-mat-short')
+=======
                     arg_with_name = arg + " --name \'cluster{}\'".format(name)
                     parser = dimers_sim.get_experiment_args()
                     arg_parse = parser.parse_args(arg_with_name.split())
                     print(arg_parse)
                     cores = 2 + (arg_parse.procs_sim * (1 + max(arg_parse.batch_procs)))[0]
                     pref = get_prefix(cores=cores)
+>>>>>>> e23d97b5f30e725d975e2cfe702e179d86513ae9
                     outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                             o='outputs/analysis_output_{}.txt'.format(name))
                     multi = get_multi_proc(cores=cores)
@@ -102,6 +111,19 @@ def main(args_list, chdir_path = "", wd_path=''):
 
     
 if __name__ == '__main__':
+<<<<<<< HEAD
+    args_ic1 = "ic --L 300 --d 60 --times 180000 --batch 90000 --procs_sim 1 --batch_procs 100"
+    args_ic2 = "ic --L 500 --d 60 --times 300000 --batch 150000 --procs_sim 1 --batch_procs 100"
+    args_ic3 = "ic --L 700 --d 60 --times 420000 --batch 210000 --procs_sim 1 --batch_procs 100"
+    args_ic4 = "ic --L 900 --d 60 --times 540000 --batch 270000 --procs_sim 1 --batch_procs 100"
+    args_ic5 = "ic --L 1100 --d 60 --times 660000 --batch 330000 --procs_sim 1 --batch_procs 100"
+    args_ic6 = "ic --L 1300 --d 60 --times 780000 --batch 390000 --procs_sim 1 --batch_procs 100"
+    args_ic7 = "ic --L 1500 --d 60 --times 900000 --batch 450000 --procs_sim 1 --batch_procs 100"
+    args_ic8 = "ic --L 1700 --d 60 --times 1020000 --batch 510000 --procs_sim 1 --batch_procs 100"
+    args_ic9 = "ic --L 1900 --d 60 --times 1140000 --batch 570000 --procs_sim 1 --batch_procs 100"
+    args_ic10 = "ic --L 2200 --d 60 --times 1320000 --batch 660000 --procs_sim 1 --batch_procs 100"
+
+=======
     #args_bc = "bs --L 100 --d 95 --times 4000 --batch 100000 400000 1200000 --procs_sim 3 --batch_procs 10 40 50"
     args_ic1 = "ic --L 80 --d 60 --times 12000 --batch 60000 --procs_sim 1 --batch_procs 10"
     args_ic2 = "ic --L 130 --d 60 --times 12000 --batch 200000 --procs_sim 1 --batch_procs 25"
@@ -113,5 +135,6 @@ if __name__ == '__main__':
     args_ic8 = "ic --L 180 --d 60 --times 3000 --batch 270000 --procs_sim 1 --batch_procs 35"
     args_ic9 = "ic --L 230 --d 60 --times 3000 --batch 340000 --procs_sim 1 --batch_procs 45"
     args_ic10 = "ic --L 280 --d 60 --times 3000 --batch 420000 --procs_sim 1 --batch_procs 55"
+>>>>>>> e23d97b5f30e725d975e2cfe702e179d86513ae9
     args_list = [args_ic1, args_ic2, args_ic3, args_ic4, args_ic5, args_ic6, args_ic7, args_ic8, args_ic9, args_ic10]
     main(args_list)
