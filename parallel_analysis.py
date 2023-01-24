@@ -8,11 +8,15 @@ def varying_batch_size(L_sim, times_sim, d_sim, batch_size, procs_sim, batch_pro
     d_sim = d_sim[0]
     dir_name = "varying_batch_size/"
     
+<<<<<<< Updated upstream
 <<<<<<< HEAD
     file_name = name[0] + '_bs_experiment_L{}_t{}_b{}____'.format(L_sim, times_sim, batch_size,
 =======
     file_name = name + '_bs_experiment_L{}_t{}_b{}____'.format(L_sim, times_sim, batch_size,
 >>>>>>> e23d97b5f30e725d975e2cfe702e179d86513ae9
+=======
+    file_name = name[0] + '_bs_experiment_L{}_t{}_b{}____'.format(L_sim, times_sim, batch_size,
+>>>>>>> Stashed changes
                                                       )
     
     title = "Evolution for varying batch size - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
@@ -38,11 +42,15 @@ def varying_initial_conditions(L_sim, times_sim, d_sim, batch_size, procs_sim, b
         batch_procs_num = batch_procs_num + (len(d_sim) - len(batch_procs_num))*batch_procs_num[-1:]
     batch_size = batch_size[0]
     dir_name = "varying_initial_conditions/"
+<<<<<<< Updated upstream
 <<<<<<< HEAD
     file_name = name[0] + '_ic_experiment_L{}_t{}_d{}____'.format(L_sim, times_sim, d_sim)
 =======
     file_name = name + '_ic_experiment_L{}_t{}_d{}____'.format(L_sim, times_sim, d_sim)
 >>>>>>> e23d97b5f30e725d975e2cfe702e179d86513ae9
+=======
+    file_name = name[0] + '_ic_experiment_L{}_t{}_d{}____'.format(L_sim, times_sim, d_sim)
+>>>>>>> Stashed changes
     title = "Evolution for initial position - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
     print("batch_procs_num={}".format(batch_procs_num))

@@ -1,4 +1,5 @@
 from dimers_util import *
+from dimers_analysis import *
 import pickle
 from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
@@ -12,58 +13,6 @@ import os
 from dataclasses import dataclass, field
 import argparse
 import sys
-
-@dataclass
-class Experiment: 
-    file_name : str
-    dir_name : str
-    results : list
-    description : str = ''
-    
-    def save(self):
-        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
-            pickle.dump(self, f)
-
-@dataclass
-class Analysis:   
-    L : int
-    times: int
-    d : int
-    batch : int
-    rho : np.ndarray
-    file_name : str
-    dir_name : str
-    analysis: dict = field(default_factory=dict, init=False)
-    
-    def __post_init__(self):
-        self.analyze()
-        
-    def save(self):
-        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
-            pickle.dump(self, f)
-
-    @classmethod
-    def load(cls, filename):
-        with open(self.dir_name + self.file_name + ".pickle", 'rb') as f:
-            return pickle.load(f)
-
-    def analyze(self):
-        print("Analysis start")
-        self.analysis['d'] = self.d
-        self.analysis['rho'] = self.rho
-        self.analysis['batch'] = self.batch
-        self.analysis['times'] = self.times
-        self.analysis['L'] = self.L
-        
-        self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
-        sites = [np.arange(1, self.rho.shape[1])]
-
-        self.analysis['Mean'] = np.average(np.repeat(sites,self.rho.shape[0],axis=0), axis=1, weights=self.rho[:, 1:]).reshape(self.analysis['Median'].shape)
-        self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
-        self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
-        self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
-        print("Analysis end")
-        return self.analysis
     
 @dataclass
 class Simulator:
@@ -72,7 +21,7 @@ class Simulator:
     d : int
     batch : int
     
-    prob : int = 1
+    prob : int = 0.5
     file_name : str = ""
     dir_name : str = "analyses/"
     batch_procs_num : int = 1
@@ -145,7 +94,7 @@ class Simulator:
         
         H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
         with Pool(self.batch_procs_num) as p:
-            c_rhos =  p.map(self.classical_evolutions_batch, (H for i in range(self.batch_procs_num)), chunksize=1)
+            c_rhos =  p.map(self.classical_evolutions_batch_points, (H for i in range(self.batch_procs_num)), chunksize=1)
             p.close()
             p.join()
         
@@ -163,12 +112,52 @@ class Simulator:
                                                                                         self.d, self.batch, 
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return analysis
+    
+    def classical_evolutions_batch_points(self, H):
+        H_ring = np.array([Gate_ring(ring) for ring in np.arange(1, self.L-1)])
+        H_hopp = np.array([Gate_hop(ring) for ring in np.arange(1, self.L-1)])
+        
+        p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
+
+        initial_psi = [get_initial_config_point(self.L, self.d)]*(self.batch//self.batch_procs_num)
+        psi = np.array(initial_psi, dtype=np.int32)
+        # print("psi0.shape=", psi.shape)
+        
+        charge = defect_density_point(psi[:,0,:])
+        rho = np.sum(charge, axis=0)
+        
+        def apply_f(f):
+            return f[0](f[1])
+
+        for i in self.progress_bar(range(self.times)):
+            if not self.local and (i % (self.times//25) == 0):
+                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
+            rng = np.random.default_rng()
+            indices = np.arange(1+i%3, self.L-1, 3) - 1
+            gates_i = rng.choice([True,False], size=(self.batch//self.batch_procs_num, len(indices)), p =[self.prob, 1 - self.prob])
+            apply = np.empty(gates_i.shape, dtype=object)
+            apply[np.argwhere(gates_i)[:,0],np.argwhere(gates_i)[:,1]] = H_ring[indices[np.argwhere(gates_i)[:,1]]]
+            apply[np.argwhere(True ^ gates_i)[:,0],np.argwhere(True ^ gates_i)[:,1]] = H_hopp[indices[np.argwhere(True ^ gates_i)[:,1]]]
+            
+            for row_gate in apply.T:
+                zips = np.array(list(zip(row_gate, psi)), dtype=object)
+                np.apply_along_axis(apply_f, 1, zips)
+            
+            # for row_gate in apply.T:
+            #     np.apply_along_axis(apply_f, 1, zip(row_gate, psi))
+
+            charge = defect_density_point(psi[:,0,:])
+            rho = np.vstack((rho, np.sum(charge, axis=0)))
+
+        if not self.local:
+            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
+
+        return rho
 
     def classical_evolutions_batch(self, H):
-        rng = np.random.default_rng()
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
-
         p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
+
         allgates = H_ring + H_hopp
 
         initial_psi = [get_initial_config(self.L, self.d)]*(self.batch//self.batch_procs_num)
@@ -184,13 +173,14 @@ class Simulator:
         for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            gates_i = rng.choice(allgates, size=self.batch//self.batch_procs_num, p=p_array)
+            rng = np.random.default_rng()
+            gates = rng.choice(allgates, size=self.batch//self.batch_procs_num, p=p_array)
             psi = np.array(list(map(apply, zip(gates_i, psi))))
             # print("psi.shape=", psi.shape)
             charge = np.apply_along_axis(defect_density, 1 , psi)
             charge0 = charge[:,0]
-            if np.sum(charge0) !=  psi.shape[1] // 3:
-                with open("bad_matrix.txt", "w") as f:
+            if np.sum(charge0) !=  psi.shape[0]:
+                with open("bad_matrix{}.txt".format(os.getpid()), "w") as f:
                     np.set_printoptions(threshold=sys.maxsize)
                     f.write( str(np.sum(charge0)) + "\n")
                     f.write(str(charge0.shape) + "\n")
@@ -214,83 +204,15 @@ class Simulator:
 
         return rho
     
-
-    
-def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False):
-    lwdt = 1
-
-    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
-    if title:
-        fig.suptitle(title)
-    
-    for a in analyses:
-        ax[0].plot(a.analysis['Mean'], label=a.analysis[label], linewidth=lwdt)
-    ax[0].legend()
-    ax[0].set_title("Mean position")
-
-    for a in analyses:
-        ax[1].plot(a.analysis['speed'], label=a.analysis[label], linewidth=lwdt)
-    ax[1].set_title("Speed")
-
-    for a in analyses:
-        ax[2].plot(a.analysis['acc'], label=a.analysis[label], linewidth=lwdt)
-    ax[2].set_title("acceleration")
-    
-    fig.tight_layout()
-    if log_scale_x:
-        ax[0].set_xscale("log", base=log_scale_x)
-        ax[1].set_xscale("log", base=log_scale_x)
-        ax[2].set_xscale("log", base=log_scale_x)
-    if log_scale_y:
-        ax[0].set_yscale("log", base=log_scale_y)
-        ax[1].set_yscale("log", base=log_scale_y)
-        ax[2].set_yscale("log", base=log_scale_y)
-    if save and name:
-        plt.savefig("figs/" + name + '.png', format='png')
-    plt.show()
-    
-def plot_analyses_old(analyses, label, save=False, title='', name=''):
-    lwdt = 1
-
-    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
-    if title:
-        fig.suptitle(title)
-    
-    for a in analyses:
-        ax[0].plot(a['Mean'], label=a[label], linewidth=lwdt)
-    ax[0].legend()
-    ax[0].set_title("Mean position")
-
-    for a in analyses:
-        ax[1].plot(a['speed'], label=a[label], linewidth=lwdt)
-    ax[1].set_title("Speed")
-
-    for a in analyses:
-        ax[2].plot(a['acc'], label=a[label], linewidth=lwdt)
-    ax[2].set_title("acceleration")
-    
-    fig.tight_layout()
-    if save and name:
-        plt.savefig("figs/" + name + '.png', format='png')
-    plt.show()
-
-def plot_rho(analysis,c=False):
-    plt.figure(figsize=[16,12])
-    plt.pcolor(analysis['rho'], cmap='binary')
-    
-    y = range(analysis['rho'].shape[0])
-    plt.plot(analysis['Median'], y, 'b-', linewidth=2, label="Median")
-    plt.plot(analysis['Mean'], y, color='lime', linestyle='-', linewidth=1, label="Mean")
-    
-    plt.fill_betweenx(y, analysis['Mean'] - analysis['std'], analysis['Mean'] + analysis['std'],
-                 color='darkgreen', alpha=0.2, label="std")
-
-
-    plt.xlabel('$x$')
-    plt.ylabel('$T$', rotation=0)
-    plt.colorbar()
-    plt.legend()
-    plt.show()
+def test_rand(n):
+    with Pool(5) as p:
+        c_rhos =  p.map(print_rand, (n for _ in range(n)), chunksize=1)
+        p.close()
+        p.join()
+        
+def print_rand(i):
+    for _ in range(3):
+        print(np.random.randint(0, 100, i))
 
 def get_experiment_args():
     parser = argparse.ArgumentParser(prog='Parallel execution of experiments and their analysis.', allow_abbrev=False)
@@ -329,35 +251,5 @@ def get_experiment_args():
     
     parser_varying_initial_conditions.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='')
-    
-
 
     return parser
-
-def plot_dist(ana, times, title, save=False):
-
-    fig, ax = plt.subplots(1,1, figsize=(8, 5))
-
-    L = ana.rho.shape[1]
-    x = range(L - 1)
-    for t in times:
-        ax.plot(x, ana.rho[t, 1:], label='t={}'.format(t))
-        ax.set_title("Initial position = {}".format(ana.d))
-        ax.set_xlabel('Site')
-        ax.set_ylabel('Probability')
-    ax.legend()
-    if save:
-        plt.savefig('figs/position_distribution_over_t_L{}.png'.format(L))
-    if title:
-        plt.title(title)
-    plt.show()
-
-def test_rand(n):
-    with Pool(5) as p:
-        c_rhos =  p.map(print_rand, (n for _ in range(n)), chunksize=1)
-        p.close()
-        p.join()
-        
-def print_rand(i):
-    for _ in range(3):
-        print(np.random.randint(0, 100, i))
