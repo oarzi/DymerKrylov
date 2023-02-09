@@ -71,8 +71,9 @@ def get_initial_config_point(L, d):
     defect = int(d)
     for i in range(0,defect):
         c0[0, 3*i + 1 + i%2] = 1
-    for i in range(defect + 1,L):
-        c0[0, 3*i] = 1
+    for i in range(defect + 1,L,2):
+        c0[0, 3*i + 1] = 1
+        c0[0, 3*i + 2] = 1
     
     return c0
 

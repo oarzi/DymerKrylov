@@ -103,7 +103,7 @@ class Simulator:
         rho = np.sum(rho, axis=0)/self.batch
         print("after batch sum", rho.shape)
 
-        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
         
         if self.save:
             analysis.save()
@@ -116,8 +116,6 @@ class Simulator:
     def classical_evolutions_batch_points(self, H):
         H_ring = np.array([Gate_ring(ring) for ring in np.arange(1, self.L-1)])
         H_hopp = np.array([Gate_hop(ring) for ring in np.arange(1, self.L-1)])
-        
-        p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
 
         initial_psi = [get_initial_config_point(self.L, self.d)]*(self.batch//self.batch_procs_num)
         psi = np.array(initial_psi, dtype=np.int32)
@@ -134,6 +132,7 @@ class Simulator:
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             rng = np.random.default_rng()
             indices = np.arange(1+i%3, self.L-1, 3) - 1
+            indices = rng.permutation(indices)
             gates_i = rng.choice([True,False], size=(self.batch//self.batch_procs_num, len(indices)), p =[self.prob, 1 - self.prob])
             apply = np.empty(gates_i.shape, dtype=object)
             apply[np.argwhere(gates_i)[:,0],np.argwhere(gates_i)[:,1]] = H_ring[indices[np.argwhere(gates_i)[:,1]]]
@@ -220,8 +219,6 @@ def get_experiment_args():
 
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
     
-    parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment', allow_abbrev=False)
-    
     parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
     parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
@@ -233,7 +230,7 @@ def get_experiment_args():
                                            type=int, nargs='+', default=1)
     
     parser_varying_batch_size.add_argument("--name", help="File prefix",
-                                           type=str, nargs='+', default='')
+                                           type=str, nargs='+', default='def')
     
     parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment',
                                                               allow_abbrev=False)
@@ -250,6 +247,26 @@ def get_experiment_args():
     parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
     
     parser_varying_initial_conditions.add_argument("--name", help="File prefix",
-                                           type=str, nargs='+', default='')
+                                           type=str, nargs='+', default='def')
+    
+    parser_varying_initial_conditions = subparsers.add_parser('pgate', help='Varying gate probabilities',
+                                                              allow_abbrev=False)
+    
+    parser_varying_initial_conditions.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_initial_conditions.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
+                                                   required=True)
+    parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
+                                                   required=True)
+    
+    parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+                                                   required=True)
+    parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
+                                                   type=int, nargs=1, required=True)
+    parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
+                                                   type=int, nargs=1, default=1)
+    parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
+    
+    parser_varying_initial_conditions.add_argument("--name", help="File prefix",
+                                           type=str, nargs='+', default='def')
 
     return parser

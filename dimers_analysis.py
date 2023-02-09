@@ -26,6 +26,7 @@ class Analysis:
     times: int
     d : int
     batch : int
+    p : float
     rho : np.ndarray
     file_name : str
     dir_name : str
@@ -158,21 +159,26 @@ def plot_rho(analysis,c=False):
     plt.legend()
     plt.show()
 
-def plot_dist(ana, times, title, save=False, name=''):
+def plot_dist(ana, times, title='', save=False, name='', site_max=-1):
 
-    fig, ax = plt.subplots(1,1, figsize=(8, 5))
+    fig, ax = plt.subplots(1,1, figsize=(14, 6))
+    ana_times = (ana.times*times).astype(np.int32)
 
     L = ana.rho.shape[1]
-    x = range(L - 1)
-    for t in times:
-        ax.plot(x, ana.rho[t, 1:], label='t={}'.format(t))
-        ax.set_title("Initial position = {}".format(ana.d))
-        ax.set_xlabel('Site')
-        ax.set_ylabel('Probability')
+    x = range(1,L if site_max == -1 else site_max)
+    for t, at in zip(times, ana_times):
+        y = ana.rho[at, 1:site_max]
+        ax.plot(x[:site_max], y, label='t={}'.format(t))
+        ax.annotate(str(t), (x[np.argmax(y)],y[np.argmax(y)]))
+    if title:
+        ax.set_title(title)
+    else:
+        ax.set_title("L={}, Initial position = {}".format(L, ana.d))
+    ax.set_xlabel('Site')
+    ax.set_ylabel('Probability', rotation=0)
     ax.legend()
     if save:
         fname = name if name else 'position_distribution_over_t_L{}.png'.format(L)
         plt.savefig('figs/' + fname)
-    if title:
-        plt.title(title)
+    fig.tight_layout()
     plt.show()
