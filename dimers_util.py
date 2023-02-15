@@ -162,7 +162,7 @@ class Gate_hop:
         # print(cond_top_right)
         if np.any(cond_top_right):
             config[cond_top_right, 3*self.i + 1], config[cond_top_right, 3*(self.i + 1)] = config[cond_top_right, 3*(self.i + 1)], config[cond_top_right, 3*self.i + 1]
-            return
+            retur  n
         
         cond_top_left = (config[:, 3*(self.i - 1) + 2] == config[:, 3*self.i]) and( config[:, 3*self.i] == config[:, 3*self.i + 2]) and (config[:, 3*self.i + 2] == 0)
         # print(cond_top_left)
@@ -216,6 +216,46 @@ def plot_conf(c):
     stripped = str(c).translate(str.maketrans({"[": "", "]": "", " ": "", "\n":""}))
     # print([stripped[i:i + 3] for i in range(0, len(stripped), 3)])
 
+    
+def check_detailed_balance(L, times, d, prob=0.5, interval=10):
+    from IPython import display
+    H_ring = np.array([Gate_ring(ring) for ring in np.arange(1, L-1)])
+    H_hopp = np.array([Gate_hop(ring) for ring in np.arange(1, L-1)])
+
+    initial_psi = [get_initial_config_point(L, d)]
+    psi = np.array(initial_psi, dtype=np.int32)
+    
+    def apply_f(f):
+        return f[0](f[1])
+    
+    states = {psi.tobytes(): 1}
+    state_vars = [0]
+    for i in range(2, times):
+        rng = np.random.default_rng()
+        shift = rng.choice([0,1,2], 1)
+        indices = np.arange(1+shift%3, L-1, 3) - 1
+        #indices = np.arange(1+i%3, L-2, 3)
+        #indices = rng.permutation(indices)
+        gates_i = rng.choice([True, False], size=(1, len(indices)), p =[prob, 1 - prob])
+        apply = np.empty(gates_i.shape, dtype=object)
+        apply[np.argwhere(gates_i)[:,0],np.argwhere(gates_i)[:,1]] = H_ring[indices[np.argwhere(gates_i)[:,1]]]
+        apply[np.argwhere(True ^ gates_i)[:,0],np.argwhere(True ^ gates_i)[:,1]] = H_hopp[indices[np.argwhere(True ^ gates_i)[:,1]]]
+
+        for row_gate in apply.T:
+            zips = np.array(list(zip(row_gate, psi)), dtype=object)
+            np.apply_along_axis(apply_f, 1, zips)
+        if psi.tobytes() in states:
+            states[psi.tobytes()] += 1
+        else:
+            states[psi.tobytes()] = 1
+        state_vars.append(np.var(list(states.values()))/i)
+        if i % interval == 0:
+            display.clear_output(wait=True)
+            plt.plot(state_vars)
+            plt.annotate(str(state_vars[-1]), (i,state_vars[-1]))
+            plt.show()
+        
+        
 ###################
 # Old code
     

@@ -131,9 +131,10 @@ class Simulator:
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             rng = np.random.default_rng()
-            indices = np.arange(1+i%3, self.L-1, 3) - 1
-            indices = rng.permutation(indices)
-            gates_i = rng.choice([True,False], size=(self.batch//self.batch_procs_num, len(indices)), p =[self.prob, 1 - self.prob])
+            shift = rng.choice([0,1,2], 1)
+            indices = np.arange(1+shift%3, self.L-2, 3)
+            #indices = rng.permutation(indices)
+            gates_i = rng.choice([True, False], size=(self.batch//self.batch_procs_num, len(indices)), p =[self.prob, 1 - self.prob])
             apply = np.empty(gates_i.shape, dtype=object)
             apply[np.argwhere(gates_i)[:,0],np.argwhere(gates_i)[:,1]] = H_ring[indices[np.argwhere(gates_i)[:,1]]]
             apply[np.argwhere(True ^ gates_i)[:,0],np.argwhere(True ^ gates_i)[:,1]] = H_hopp[indices[np.argwhere(True ^ gates_i)[:,1]]]

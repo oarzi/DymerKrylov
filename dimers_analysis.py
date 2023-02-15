@@ -161,7 +161,7 @@ def plot_rho(analysis,c=False):
 
 def plot_dist(ana, times, title='', save=False, name='', site_max=-1):
 
-    fig, ax = plt.subplots(1,1, figsize=(14, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(14, 6))
     ana_times = (ana.times*times).astype(np.int32)
 
     L = ana.rho.shape[1]
