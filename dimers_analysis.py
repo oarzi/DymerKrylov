@@ -160,6 +160,10 @@ def plot_rho(analysis,c=False):
     plt.show()
 
 def plot_dist(ana, times, title='', save=False, name='', site_max=-1):
+    '''
+    Parameters:
+        times - Iterable of floats between 0 and 1. The relative time steps to plot.
+    '''
 
     fig, ax = plt.subplots(1, 1, figsize=(14, 6))
     ana_times = (ana.times*times).astype(np.int32)

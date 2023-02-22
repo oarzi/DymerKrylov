@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import struct
 import scipy.sparse as sparse
+import os
 
         
 def defect_density(psi):
@@ -143,8 +144,9 @@ class hop:
 class Gate_ring:
     i : int
     def __call__(self, config):
-        
-        cond = (config[:, 3*self.i] == config[:, 3*(self.i + 1)]) & (config[:, 3*self.i + 1] == config[:, 3*self.i + 2]) & (config[:, 3*self.i] != config[:, 3*self.i + 1])
+       
+        #print(type(config))
+        cond = np.logical_and(np.logical_and(config[:, 3*self.i] == config[:, 3*(self.i + 1)],config[:, 3*self.i + 1] == config[:, 3*self.i + 2]), config[:, 3*self.i] != config[:, 3*self.i + 1])
         if np.any(cond):
             indices = range(3*self.i ,3*(self.i+1) + 2)
             start, end = indices[0], indices[-1]
@@ -155,32 +157,41 @@ class Gate_ring:
     
 @dataclass
 class Gate_hop:
+    # Verify this function! Is the return correct?
     i : int
     def __call__(self, config):
+        #print(type(config))
+        cond_top_right = np.logical_and(np.logical_and(config[:, 3*(self.i + 1)] == config[:, 3*(self.i + 1)+2],
+                                                        config[:, 3*(self.i + 1)+2] == config[:, 3*self.i + 2]   ),
+                                         config[:, 3*self.i + 2] == 0)
         
-        cond_top_right =  (config[:, 3*(self.i + 1)] == config[:, 3*(self.i + 1)+2]) and( config[:, 3*(self.i + 1)+2] ==config[:, 3*self.i + 2]) and (config[:, 3*self.i + 2] == 0)
+        cond_top_left = np.logical_and(np.logical_and(config[:, 3*(self.i - 1) + 2] == config[:, 3*self.i],
+                                                      config[:, 3*self.i] == config[:, 3*self.i + 2]) ,
+                                       config[:, 3*self.i + 2] == 0)
+        
+        cond_bottom_right = np.logical_and(np.logical_and(config[:, 3*self.i + 1] == config[:, 3*(self.i+1)] ,
+                                                          config[:, 3*(self.i+1)] == config[:, 3*(self.i+1) + 1]),
+                                           config[:, 3*(self.i+1) + 1] == 0)
+        
+        cond_bottom_left = np.logical_and(np.logical_and(config[:, 3*(self.i - 1) + 1] == config[:, 3*self.i], 
+                                                         config[:, 3*self.i] == config[:, 3*self.i + 1]),
+                                          config[:, 3*self.i + 1] == 0)
         # print(cond_top_right)
         if np.any(cond_top_right):
             config[cond_top_right, 3*self.i + 1], config[cond_top_right, 3*(self.i + 1)] = config[cond_top_right, 3*(self.i + 1)], config[cond_top_right, 3*self.i + 1]
-            retur  n
         
-        cond_top_left = (config[:, 3*(self.i - 1) + 2] == config[:, 3*self.i]) and( config[:, 3*self.i] == config[:, 3*self.i + 2]) and (config[:, 3*self.i + 2] == 0)
+
         # print(cond_top_left)
         if np.any(cond_top_left):
             config[cond_top_left, 3*(self.i + 1)], config[cond_top_left,3*self.i + 2] = config[cond_top_left,3*self.i + 2], config[cond_top_left,3*(self.i + 1)]
-            return
         
-        cond_bottom_right= (config[:, 3*self.i + 1] == config[:, 3*(self.i+1)]) and (config[:, 3*(self.i+1)] == config[:, 3*(self.i+1) + 1]) and (config[:, 3*(self.i+1) + 1] == 0)
         # print(cond_bottom_right)
         if np.any(cond_bottom_right):
             config[cond_bottom_right, 3*self.i + 2], config[cond_bottom_right, 3*(self.i + 1)] = config[cond_bottom_right,3*(self.i + 1)], config[cond_bottom_right,3*self.i + 2]
-            return
-        
-        cond_bottom_left = (config[:, 3*(self.i - 1) + 1] == config[:, 3*self.i]) and (config[:, 3*self.i] == config[:, 3*self.i + 1]) and (config[:, 3*self.i + 1] == 0)
+    
         # print(cond_bottom_left)
         if np.any(cond_bottom_left):
             config[cond_bottom_left, 3*self.i + 1], config[cond_bottom_left,3*(self.i + 1)] = config[cond_bottom_left, 3*(self.i + 1)], config[cond_bottom_left, 3*self.i + 1]
-            return
         
         # if config[3*(self.i + 1)] == config[3*(self.i + 1)+2] == config[3*self.i + 2] == 0:
         #     # Top-right
@@ -202,6 +213,8 @@ def plot_conf(c):
     L = len(c)//3
     color = ['k','r']
     plt.figure(figsize=[L,1])
+    if c[0] == c[2]  == 0:
+            plt.scatter([0],[1],c='r', marker='+', s=10, linewidths=5) # defect
     for i in range(L):
         if c[3*i] + c[3*((i-1)%L)+2] + c[3*i+2] == 0:
             plt.scatter([i],[1],c='r', marker='+', s=10, linewidths=5) # defect
@@ -219,11 +232,8 @@ def plot_conf(c):
     
 def check_detailed_balance(L, times, d, prob=0.5, interval=10):
     from IPython import display
-    H_ring = np.array([Gate_ring(ring) for ring in np.arange(1, L-1)])
-    H_hopp = np.array([Gate_hop(ring) for ring in np.arange(1, L-1)])
 
-    initial_psi = [get_initial_config_point(L, d)]
-    psi = np.array(initial_psi, dtype=np.int32)
+    psi = np.repeat(get_initial_config_point(L, d), 1, axis=0)
     
     def apply_f(f):
         return f[0](f[1])
@@ -236,19 +246,18 @@ def check_detailed_balance(L, times, d, prob=0.5, interval=10):
         indices = np.arange(1+shift%3, L-1, 3) - 1
         #indices = np.arange(1+i%3, L-2, 3)
         #indices = rng.permutation(indices)
-        gates_i = rng.choice([True, False], size=(1, len(indices)), p =[prob, 1 - prob])
-        apply = np.empty(gates_i.shape, dtype=object)
-        apply[np.argwhere(gates_i)[:,0],np.argwhere(gates_i)[:,1]] = H_ring[indices[np.argwhere(gates_i)[:,1]]]
-        apply[np.argwhere(True ^ gates_i)[:,0],np.argwhere(True ^ gates_i)[:,1]] = H_hopp[indices[np.argwhere(True ^ gates_i)[:,1]]]
-
-        for row_gate in apply.T:
-            zips = np.array(list(zip(row_gate, psi)), dtype=object)
-            np.apply_along_axis(apply_f, 1, zips)
+        gates_i = rng.choice([True, False], size=len(indices), p =[prob, 1 - prob])
+        
+        for index , gate_type in zip(indices, gates_i):
+            Gate = Gate_ring(index) if gate_type else Gate_hop(index)
+            Gate_ring(psi)
+            
         if psi.tobytes() in states:
             states[psi.tobytes()] += 1
         else:
             states[psi.tobytes()] = 1
-        state_vars.append(np.var(list(states.values()))/i)
+        var_i =  np.var(list(states.values()))
+        state_vars.append(np.sqrt(var_i)/i)
         if i % interval == 0:
             display.clear_output(wait=True)
             plt.plot(state_vars)
@@ -288,9 +297,10 @@ def load_configs(fn):
         print("File not found!")
         
 def load_data(L):
+    configs = load_configs('matrices/basis_L{}.dat'.format(L))
     H_ring = load_matrix('matrices/matrix_ring_L{}.dat'.format(L))
     H_hopp = load_matrix('matrices/matrix_hopp_L{}.dat'.format(L))
-    configs = load_configs('matrices/basis_L{}.dat'.format(L))
+    
     
     print("#######################")
     

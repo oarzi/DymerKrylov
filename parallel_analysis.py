@@ -37,7 +37,7 @@ def varying_initial_conditions(args):
     batch_size = batch_size[0]
     dir_name = "varying_initial_conditions/"
 
-    file_name = name[0] + '_ic_experiment_L{}_t{}_d{}____'.format(L_sim, times_sim, d_sim)
+    file_name = name[0] + '_ic_experiment_L{}_t{}_d{})_b{}___'.format(L_sim, times_sim, d_sim, batch_size)
 
     title = "Evolution for initial position - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
