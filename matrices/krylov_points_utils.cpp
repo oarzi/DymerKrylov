@@ -1,6 +1,6 @@
 #include "krylov_points_utils.h"
 #include <deque>
-
+#include <cmath>
 
 void krylov_L(int L) {
   auto start = high_resolution_clock::now();
@@ -238,15 +238,23 @@ std::vector<char> get_config(int L) {
   std::vector<char> config(3 * L, 0);
   config[0] = 0;
   config[2] = 0;
-
-  for (int i = 0; i < L / 2; i++)
+  int defect = std::floor(L/2);
+  
+  for (int i = 0; i < defect; i++)
     config[3 * i + 1 + i % 2] = 1;
 
-  for (int i = L / 2 + 1; i < L; i=i+2)
+  for (int i = defect + 1; i < L; i=i+2)
     {
         config[3 * i + 1] = 1;
         config[3 * i + 2] = 1;
     }
+ 
+ config[3*L - 1] = 0;
+ config[3*L - 2] = 0;
+ if ((L - defect) %2 == 0)
+ {
+    config[3*L - 3] = 1;
+ }
 
   return config;
 }
