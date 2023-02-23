@@ -129,7 +129,7 @@ class Simulator:
 
             for index , gate_type in zip(indices, gates_i):
                 Gate = Gate_ring(index) if gate_type else Gate_hop(index)
-                Gate_ring(psi)
+                Gate(psi)
             
             charge = defect_density_point(psi)
             rho = np.vstack((rho, np.sum(charge, axis=0)))

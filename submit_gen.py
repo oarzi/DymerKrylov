@@ -61,7 +61,7 @@ def get_sge_scripts(args):
                 print(arg_parse)
                 mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
                 cores = 2 + len(arg_parse.procs_sim) + sum(arg_parse.batch_procs)
-                pref = get_prefix(mem ,cores=cores, q='cond-mat-short')
+                pref = get_prefix(mem ,cores=cores, q='cond-mat')
                 outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                         o='outputs/analysis_output_{}.txt'.format(name))
                 multi = get_multi_proc(cores=cores)
@@ -100,10 +100,17 @@ def main(args_list, chdir_path = "", wd_path=''):
     
 if __name__ == '__main__':
     
-    b_list = [1e3, 1e4, 1e5, 1e6]
-    args_list = ["bs --L 100 --d 60 --times 400 --batch {} --procs_sim 1 --batch_procs 40".format(int(b)) for b in b_list]
+    args_list = ["bs --L 100 --d 60 --times 800 --batch 1000 10000 100000 1000000 --procs_sim 1 --batch_procs 40"]
     main(args_list)
     
-    b_list = [1e3, 1e4, 1e5, 1e6]
-    args_list = ["bs --L 500 --d 60 --times 400 --batch {} --procs_sim 1 --batch_procs 40".format(int(b)) for b in b_list]
+    args_list = ["bs --L 500 --d 60 --times 800 ---batch 1000 10000 100000 1000000 --procs_sim 1 --batch_procs 40"]
+    main(args_list)
+    
+    
+    L_list = [300, 600, 1200, 2400]
+    args_list = ["ic --L {} --d 60 --times 800 --batch 10000 --procs_sim 1 --batch_procs 40".format(_L) for _L in L_list]
+    main(args_list)
+    
+    
+    
     main(args_list)
