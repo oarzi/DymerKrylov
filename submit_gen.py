@@ -101,9 +101,9 @@ def main(args_list, chdir_path = "", wd_path=''):
 if __name__ == '__main__':
     
     b_list = [1e3, 1e4, 1e5, 1e6]
-    args_list = ["bs --L 100 --d 60 --times 400 --batch {} --procs_sim 1 --batch_procs 50".format(int(b)) for b in b_list]
+    args_list = ["bs --L 100 --d 60 --times 400 --batch {} --procs_sim 1 --batch_procs 40".format(int(b)) for b in b_list]
     main(args_list)
     
     b_list = [1e3, 1e4, 1e5, 1e6]
-    args_list = ["bs --L 500 --d 60 --times 400 --batch {} --procs_sim 1 --batch_procs 50".format(int(b)) for b in b_list]
+    args_list = ["bs --L 500 --d 60 --times 400 --batch {} --procs_sim 1 --batch_procs 40".format(int(b)) for b in b_list]
     main(args_list)
