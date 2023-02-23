@@ -41,6 +41,13 @@ def defect_density_point(psi):
     psi_up = (psi[:, edge_02] + psi[:, edge_10] + psi[:, edge_12] + 1) % 2
     
     return np.roll(psi_down + psi_up, 1)
+
+def defect_density_points_quantum(configs,psi):
+    psi2 = np.abs(psi**2)
+    density = defect_density_point(configs)
+    charge = (density.T*psi2.T).T
+    charge = np.sum(charge, axis=0)
+    return charge
     
 
 def get_initial_config(L, d):
@@ -75,8 +82,22 @@ def get_initial_config_point(L, d):
     for i in range(defect + 1,L,2):
         c0[0, 3*i + 1] = 1
         c0[0, 3*i + 2] = 1
+        
+    c0[0, -1] = 0
+    c0[0, -2] = 0
+    if (L - d) % 2 == 0:
+        c0[0, -3] = 1
     
     return c0
+
+def get_initial_config_point_quantum(L,d, configs):
+    dim = configs.shape[0]
+    c0 = get_initial_config_point(L, d)
+    i0 = np.where(np.dot(configs,c0.T)//np.sum(c0)==1)[0][0]
+    psi = np.zeros((dim, 1)); 
+    psi[i0] = 1.
+    
+    return psi
 
 def get_h_ring(L):
     i = np.arange(1,L - 1)
@@ -228,29 +249,40 @@ def plot_conf(c):
     plt.axis('off')
     stripped = str(c).translate(str.maketrans({"[": "", "]": "", " ": "", "\n":""}))
     # print([stripped[i:i + 3] for i in range(0, len(stripped), 3)])
+    
+def promote_psi_classical(psi, H_ring, H_hop, prob):
+    L = psi.shape[-1]//3
+    rng = np.random.default_rng()
+    shift = rng.choice([0,1,2], 1)
+    indices = np.arange(1+shift%3, L-2, 3)
+    gates_i = rng.choice([True, False], size=(psi.shape[0], len(indices)), p =[prob, 1 - prob])
+
+    apply = np.empty(gates_i.shape, dtype=object)
+    rings_i = np.argwhere(gates_i)
+    hops_i = np.argwhere(np.logical_not(gates_i))
+    apply[rings_i[:,0], rings_i[:,1]] = H_ring[indices[rings_i[:,1]]]
+    apply[hops_i[:,0], hops_i[:,1]] = H_hop[indices[hops_i[:,1]]]
+
+    def apply_gate(f):
+        return f[0](f[1])
+
+    for row_gate in apply.T:
+        zips = np.array(list(zip(row_gate, psi)), dtype=object)
+        np.apply_along_axis(apply_gate, 1, zips)
 
     
 def check_detailed_balance(L, times, d, prob=0.5, interval=10):
     from IPython import display
-
-    psi = np.repeat(get_initial_config_point(L, d), 1, axis=0)
     
-    def apply_f(f):
-        return f[0](f[1])
+    size = 1
+    H_ring = np.array([Gate_ring(i) for i in range(1,L - 1)], dtype=object)
+    H_hop = np.array([Gate_hop(i) for i in range(1, L - 1)], dtype=object)
+    psi = np.repeat(get_initial_config_point(L, d), size, axis=0).reshape(size, 1, 3*L)
     
     states = {psi.tobytes(): 1}
     state_vars = [0]
     for i in range(2, times):
-        rng = np.random.default_rng()
-        shift = rng.choice([0,1,2], 1)
-        indices = np.arange(1+shift%3, L-1, 3) - 1
-        #indices = np.arange(1+i%3, L-2, 3)
-        #indices = rng.permutation(indices)
-        gates_i = rng.choice([True, False], size=len(indices), p =[prob, 1 - prob])
-        
-        for index , gate_type in zip(indices, gates_i):
-            Gate = Gate_ring(index) if gate_type else Gate_hop(index)
-            Gate_ring(psi)
+        promote_psi_classical(psi, H_ring, H_hop, prob)  
             
         if psi.tobytes() in states:
             states[psi.tobytes()] += 1
@@ -281,7 +313,7 @@ def load_matrix(fn):
         H=sparse.csr_matrix( (a[:,2],(a[:,0],a[:,1])), shape=(dim,dim),dtype=np.float64)
         return H
     else:
-        print("File not found!")
+        print("load_matrix {} - File not found!".format(fn))
 
 def load_configs(fn):
     if os.path.isfile(fn)==True and os.path.getsize(fn)>0:
@@ -294,7 +326,7 @@ def load_configs(fn):
         fin.close()
         return np.reshape(a,(dim,3*L))
     else:
-        print("File not found!")
+        print(" load_configs {} -File not found!".format(fn))
         
 def load_data(L):
     configs = load_configs('matrices/basis_L{}.dat'.format(L))

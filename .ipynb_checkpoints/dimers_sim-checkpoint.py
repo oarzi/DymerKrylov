@@ -19,9 +19,10 @@ class Simulator:
     L : int
     times: int
     d : int
-    batch : int
     
+    batch : int = 0
     prob : int = 0.5
+    
     file_name : str = ""
     dir_name : str = "analyses/"
     batch_procs_num : int = 1
@@ -92,9 +93,9 @@ class Simulator:
     def simulate(self):
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
-        H = {'H_ring' : get_h_ring(self.L), 'H_hopp' : get_h_hop(self.L)}
+        thread_size = self.batch//self.batch_procs_num
         with Pool(self.batch_procs_num) as p:
-            c_rhos =  p.map(self.classical_evolutions_batch_points, (H for i in range(self.batch_procs_num)), chunksize=1)
+            c_rhos =  p.map(self.classical_evolutions_batch_points, (thread_size for i in range(self.batch_procs_num)), chunksize=1)
             p.close()
             p.join()
         
@@ -103,7 +104,7 @@ class Simulator:
         rho = np.sum(rho, axis=0)/self.batch
         print("after batch sum", rho.shape)
 
-        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
         
         if self.save:
             analysis.save()
@@ -113,46 +114,52 @@ class Simulator:
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return analysis
     
-    def classical_evolutions_batch_points(self, H):
-        H_ring = np.array([Gate_ring(ring) for ring in np.arange(1, self.L-1)])
-        H_hopp = np.array([Gate_hop(ring) for ring in np.arange(1, self.L-1)])
+    def classical_evolutions_batch_points(self, size):
+        H_ring = np.array([Gate_ring(i) for i in range(1,self.L - 1)], dtype=object)
+        H_hop = np.array([Gate_hop(i) for i in range(1, self.L - 1)], dtype=object)
+        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0).reshape(size, 1, 3*self.L)
         
-        p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
-
-        initial_psi = [get_initial_config_point(self.L, self.d)]*(self.batch//self.batch_procs_num)
-        psi = np.array(initial_psi, dtype=np.int32)
-        # print("psi0.shape=", psi.shape)
         
         charge = defect_density_point(psi[:,0,:])
         rho = np.sum(charge, axis=0)
-        
-        def apply_f(f):
-            return f[0](f[1])
-
-        for i in self.progress_bar(range(self.times)):
+        pb = self.progress_bar(range(self.times))
+        for i in pb:
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            rng = np.random.default_rng()
-            indices = np.arange(1+i%3, self.L-1, 3) - 1
-            gates_i = rng.choice([True,False], size=(self.batch//self.batch_procs_num, len(indices)), p =[self.prob, 1 - self.prob])
-            apply = np.empty(gates_i.shape, dtype=object)
-            apply[np.argwhere(gates_i)[:,0],np.argwhere(gates_i)[:,1]] = H_ring[indices[np.argwhere(gates_i)[:,1]]]
-            apply[np.argwhere(True ^ gates_i)[:,0],np.argwhere(True ^ gates_i)[:,1]] = H_hopp[indices[np.argwhere(True ^ gates_i)[:,1]]]
+                
+            promote_psi_classical(psi, H_ring, H_hop, self.prob)  
             
-            for row_gate in apply.T:
-                zips = np.array(list(zip(row_gate, psi)), dtype=object)
-                np.apply_along_axis(apply_f, 1, zips)
-            
-            # for row_gate in apply.T:
-            #     np.apply_along_axis(apply_f, 1, zip(row_gate, psi))
-
             charge = defect_density_point(psi[:,0,:])
             rho = np.vstack((rho, np.sum(charge, axis=0)))
 
-        if not self.local:
-            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
+        #if not self.local:
+        print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
         return rho
+    
+
+    def quantum_evolutions_batch_points(self, dt=0.5):
+        H = load_data(self.L)
+        H_ring, H_hop, configs = H["H_ring"], H["H_hopp"], H["configs"]
+
+        psi = get_initial_config_point_quantum(self.L, self.d, configs)
+
+        rho = np.array([defect_density_points_quantum(configs,psi)])
+
+        for i in  self.progress_bar(range(self.times)):
+            psi = expm_multiply(-1j*(self.prob*H_ring + (1 - self.prob)*H_hop)*dt,psi)
+            rho = np.vstack((rho, defect_density_points_quantum(configs,psi)))
+
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
+        
+        if self.save:
+            analysis.save()
+            
+        print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L, self.times, 
+                                                                                        self.d, self.batch, 
+                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
+        return analysis
+    
 
     def classical_evolutions_batch(self, H):
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
@@ -220,8 +227,6 @@ def get_experiment_args():
 
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
     
-    parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment', allow_abbrev=False)
-    
     parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
     parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
@@ -230,10 +235,10 @@ def get_experiment_args():
     parser_varying_batch_size.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int,
                                            nargs=1, default=1)
     parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
-                                           type=int, nargs='+', default=1)
+                                           type=int, nargs='+', default=[1])
     
     parser_varying_batch_size.add_argument("--name", help="File prefix",
-                                           type=str, nargs='+', default='')
+                                           type=str, nargs='+', default='def')
     
     parser_varying_initial_conditions = subparsers.add_parser('ic', help='Varying varying initial conditions experiment',
                                                               allow_abbrev=False)
@@ -250,6 +255,26 @@ def get_experiment_args():
     parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
     
     parser_varying_initial_conditions.add_argument("--name", help="File prefix",
-                                           type=str, nargs='+', default='')
+                                           type=str, nargs='+', default='def')
+    
+    parser_varying_initial_conditions = subparsers.add_parser('pgate', help='Varying gate probabilities',
+                                                              allow_abbrev=False)
+    
+    parser_varying_initial_conditions.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_initial_conditions.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
+                                                   required=True)
+    parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
+                                                   required=True)
+    
+    parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+                                                   required=True)
+    parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
+                                                   type=int, nargs=1, required=True)
+    parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
+                                                   type=int, nargs=1, default=1)
+    parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
+    
+    parser_varying_initial_conditions.add_argument("--name", help="File prefix",
+                                           type=str, nargs='+', default='def')
 
     return parser

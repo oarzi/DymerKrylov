@@ -1,4 +1,5 @@
 import dimers_sim
+import dimers_analysis
 import time
 import sys
 
@@ -20,13 +21,13 @@ def varying_batch_size(args):
     results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
 
 
-    experiment = dimers_sim.Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
+    experiment = dimers_analysis.Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
                                       "analyses/" + dir_name,
                                       results,
                                       description='Varying batch size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
-    dimers_sim.plot_analyses(results,label = 'batch', title=title, save=True, name = dir_name + file_name  + 
+    dimers_analysis.plot_analyses(results,label = 'batch', title=title, save=True, name = dir_name + file_name  + 
                              time.strftime("%Y_%m_%d__%H_%M"))
     
 def varying_initial_conditions(args):
@@ -48,13 +49,13 @@ def varying_initial_conditions(args):
     results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
 
     
-    experiment = dimers_sim.Experiment(file_name +  time.strftime("%Y_%m_%d__%H_%M"),
+    experiment = dimers_analysis.Experiment(file_name +  time.strftime("%Y_%m_%d__%H_%M"),
                                       "analyses/" + dir_name,
                                       results,
                                       description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
-    dimers_sim.plot_analyses(results, label = 'd', title=title, save=True, name = dir_name + file_name + 
+    dimers_analysis.plot_analyses(results, label = 'd', title=title, save=True, name = dir_name + file_name + 
                              time.strftime("%Y_%m_%d__%H_%M"))
     
 def varying_gate_probabilities(args):
@@ -76,13 +77,13 @@ def varying_gate_probabilities(args):
     results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
 
     
-    experiment = dimers_sim.Experiment(file_name +  time.strftime("%Y_%m_%d__%H_%M"),
+    experiment = dimers_analysis.Experiment(file_name +  time.strftime("%Y_%m_%d__%H_%M"),
                                       "analyses/" + dir_name,
                                       results,
                                       description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
-    dimers_sim.plot_analyses(results, label = 'd', title=title, save=True, name = dir_name + file_name + 
+    dimers_analysis.plot_analyses(results, label = 'd', title=title, save=True, name = dir_name + file_name + 
                              time.strftime("%Y_%m_%d__%H_%M"))
 
                          

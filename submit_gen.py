@@ -60,7 +60,7 @@ def get_sge_scripts(args):
                 arg_parse = parser.parse_args(arg_with_name.split())
                 print(arg_parse)
                 mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
-                cores = 2 + len(arg_parse.procs_sim) + sum(arg_parse.batch_procs)
+                cores = 2 + sum([p*b for p,b in zip(arg_parse.procs_sim, arg_parse.batch_procs)])
                 pref = get_prefix(mem ,cores=cores, q='cond-mat-short')
                 outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                         o='outputs/analysis_output_{}.txt'.format(name))
