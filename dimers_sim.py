@@ -19,9 +19,10 @@ class Simulator:
     L : int
     times: int
     d : int
-    batch : int
     
+    batch : int = 0
     prob : int = 0.5
+    
     file_name : str = ""
     dir_name : str = "analyses/"
     batch_procs_num : int = 1
@@ -92,7 +93,7 @@ class Simulator:
     def simulate(self):
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
-        thread_size = elf.batch//self.batch_procs_num
+        thread_size = self.batch//self.batch_procs_num
         with Pool(self.batch_procs_num) as p:
             c_rhos =  p.map(self.classical_evolutions_batch_points, (thread_size for i in range(self.batch_procs_num)), chunksize=1)
             p.close()
@@ -114,30 +115,51 @@ class Simulator:
         return analysis
     
     def classical_evolutions_batch_points(self, size):
-        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0)
+        H_ring = np.array([Gate_ring(i) for i in range(1,self.L - 1)], dtype=object)
+        H_hop = np.array([Gate_hop(i) for i in range(1, self.L - 1)], dtype=object)
+        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0).reshape(size, 1, 3*self.L)
         
-        charge = defect_density_point(psi)
+        
+        charge = defect_density_point(psi[:,0,:])
         rho = np.sum(charge, axis=0)
-
-        for i in self.progress_bar(range(self.times)):
+        pb = self.progress_bar(range(self.times))
+        for i in pb:
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            rng = np.random.default_rng()
-            shift = rng.choice([0,1,2], 1)
-            indices = np.arange(1+shift%3, self.L-2, 3)
-            gates_i = rng.choice([True, False], size=len(indices), p =[self.prob, 1 - self.prob])
+                
+            promote_psi_classical(psi, H_ring, H_hop, self.prob)  
 
-            for index , gate_type in zip(indices, gates_i):
-                Gate = Gate_ring(index) if gate_type else Gate_hop(index)
-                Gate(psi)
-            
-            charge = defect_density_point(psi)
+            charge = defect_density_point(psi[:,0,:])
             rho = np.vstack((rho, np.sum(charge, axis=0)))
 
-        if not self.local:
-            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
+        #if not self.local:
+        print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
         return rho
+    
+
+    def quantum_evolutions_batch_points(self, dt=0.5):
+        H = load_data(self.L)
+        H_ring, H_hop, configs = H["H_ring"], H["H_hopp"], H["configs"]
+
+        psi = get_initial_config_point_quantum(self.L, self.d, configs)
+
+        rho = np.array([defect_density_points_quantum(configs,psi)])
+
+        for i in  self.progress_bar(range(self.times)):
+            psi = expm_multiply(-1j*(self.prob*H_ring + (1 - self.prob)*H_hop)*dt,psi)
+            rho = np.vstack((rho, defect_density_points_quantum(configs,psi)))
+
+        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
+        
+        if self.save:
+            analysis.save()
+            
+        print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L, self.times, 
+                                                                                        self.d, self.batch, 
+                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
+        return analysis
+    
 
     def classical_evolutions_batch(self, H):
         H_ring, H_hopp, = H['H_ring'], H['H_hopp']
@@ -213,7 +235,7 @@ def get_experiment_args():
     parser_varying_batch_size.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int,
                                            nargs=1, default=1)
     parser_varying_batch_size.add_argument("--batch_procs", help="Number of processes per single running experiment",
-                                           type=int, nargs='+', default=1)
+                                           type=int, nargs='+', default=[1])
     
     parser_varying_batch_size.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='def')

@@ -1,3 +1,5 @@
+Meetings/
+Meetings/*
 analyses/varying_initial_conditions/
 analyses/varying_initial_conditions/*
 *.dat

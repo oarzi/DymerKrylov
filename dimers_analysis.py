@@ -79,7 +79,7 @@ def dist_fit(ana, fit, t, p0=None):
     #  "Width = {}".format(popt[1]))
     return popt, pcov, x_max, x_min
 
-def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False):
+def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False, t_max=-1):
     lwdt = 1
 
     fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
@@ -88,7 +88,7 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
     
     for a in analyses:
         a_label = "{}=".format(label) + str(a.analysis[label])
-        ax[0].plot(a.analysis['Mean'], label=a_label, linewidth=lwdt)
+        ax[0].plot(a.analysis['Mean'][:t_max], label=a_label, linewidth=lwdt)
         x = len(a.analysis['Mean'])//2
         y = a.analysis['Mean'][x]
         ax[0].annotate(a_label, (x,y))
@@ -96,11 +96,11 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
     ax[0].set_title("Mean position")
 
     for a in analyses:
-        ax[1].plot(a.analysis['speed'], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+        ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
     ax[1].set_title("Speed")
 
     for a in analyses:
-        ax[2].plot(a.analysis['acc'], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+        ax[2].plot(a.analysis['acc'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()

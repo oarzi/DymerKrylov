@@ -60,7 +60,7 @@ def get_sge_scripts(args):
                 arg_parse = parser.parse_args(arg_with_name.split())
                 print(arg_parse)
                 mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
-                cores = 2 + len(arg_parse.procs_sim) + sum(arg_parse.batch_procs)
+                cores = 2 + sum([p*b for p,b in zip(arg_parse.procs_sim, arg_parse.batch_procs)])
                 pref = get_prefix(mem ,cores=cores, q='cond-mat')
                 outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                         o='outputs/analysis_output_{}.txt'.format(name))
@@ -99,18 +99,30 @@ def main(args_list, chdir_path = "", wd_path=''):
 
     
 if __name__ == '__main__':
-    
-    args_list = ["bs --L 100 --d 60 --times 800 --batch 1000 10000 100000 1000000 --procs_sim 1 --batch_procs 40"]
+    """
+    1. Initial conditions example:
+
+        L_list = [300, 600, 1200, 2400]
+        args_list = ["ic --L {} --d 60 --times 800 --batch 10000 --procs_sim 1 --batch_procs 40".format(_L) for _L in L_list]
+        
+    2. Batch size example:
+
+        args_list = ["bs --L 100 --d 60 --times 800 --batch 1000 10000 100000 1000000 --procs_sim 1 --batch_procs 40"]
+        
+    3. Probability example:
+        
+        p_list = [0.1, 0.01, 0.001, 0.0001, 0.00001]
+        args_list = ["pgate --L 400 --d 30 --times 800 --batch 10000 --p {} --procs_sim 1 --batch_procs 80".format(_p) for _p in p_list]
+
+    """
+ 
+    p_list = [0.95, 0.75, 0.5, 0.35, 0.2, 0.15, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001]
+    args_list = ["pgate --L 100 --d 60 --times 3000 --batch 10000 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
     main(args_list)
     
-    args_list = ["bs --L 500 --d 60 --times 800 ---batch 1000 10000 100000 1000000 --procs_sim 1 --batch_procs 40"]
+    args_list = ["pgate --L 400 --d 60 --times 3000 --batch 10000 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
     main(args_list)
     
-    
-    L_list = [300, 600, 1200, 2400]
-    args_list = ["ic --L {} --d 60 --times 800 --batch 10000 --procs_sim 1 --batch_procs 40".format(_L) for _L in L_list]
+    args_list = ["pgate --L 800 --d 60 --times 3000 --batch 10000 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
     main(args_list)
-    
-    
-    
-    main(args_list)
+            

@@ -1,0 +1,260 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+Given operator 
+\begin_inset Formula $\sigma^{\mu}$
+\end_inset
+
+, which is evolved in time according to 
+\begin_inset Formula $\sigma^{\mu}\left(t\right)=U^{\dagger}\left(t\right)\sigma^{\mu}U\left(t\right)=\sum_{\nu}c_{\mu}^{\nu}\sigma^{\nu}$
+\end_inset
+
+, where 
+\begin_inset Formula $c_{\mu}^{\nu}$
+\end_inset
+
+ are the projections over the operators 
+\begin_inset Formula $\sigma^{\nu}$
+\end_inset
+
+ given by
+\begin_inset Formula 
+\[
+c_{\mu}^{\nu}=\frac{1}{q^{L}}Tr\left(\sigma^{\nu}\sigma^{\mu}\left(t\right)\right)=\frac{1}{q^{L}}Tr\left(\sigma^{\nu}U^{\dagger}\left(t\right)\sigma^{\mu}U\left(t\right)\right)
+\]
+
+\end_inset
+
+where 
+\begin_inset Formula $q$
+\end_inset
+
+ is the single-site Hilbert space dimensions, and 
+\begin_inset Formula $L$
+\end_inset
+
+ is the entire system size.
+ The circuit 
+\begin_inset Formula $U\left(t\right)$
+\end_inset
+
+ is a product of random gates 
+\begin_inset Formula $W\left(s,\tau\right)$
+\end_inset
+
+ , as given by equation 4.
+ The paper studies the properties of 
+\begin_inset Formula $c_{\mu}^{\nu}$
+\end_inset
+
+ and other quantities, after averaging over different realizations of the
+ circuit.
+ In the random unitary case, the gates 
+\begin_inset Formula $W\left(s,\tau\right)$
+\end_inset
+
+ are chosen by random from, according to the Haar measure, from the unitary
+ group that acts on two 
+\begin_inset Formula $q$
+\end_inset
+
+-dits.
+\end_layout
+
+\begin_layout Standard
+Claim: The average of 
+\begin_inset Formula $c_{\mu}^{\nu}$
+\end_inset
+
+ over Haar measure is 0.
+\begin_inset Formula 
+\[
+\overline{c_{\mu}^{\nu}\left(t\right)}=\int\overbrace{d_{haar}U}^{probability}\,\overbrace{\frac{1}{q^{L}}Tr\left(\sigma^{\nu}\sigma^{\mu}\left(t\right)\right)}^{c_{\mu}^{\nu}\left(t\right)}=\int d_{haar}U\,\frac{1}{q^{L}}Tr\left(\sigma^{\nu}\sum_{\eta}c_{\mu}^{\eta}\sigma^{\eta}\right)=\frac{1}{q^{L}}\sum_{\eta}Tr\left(\sigma^{\nu}\sigma^{\eta}\right)\int d_{haar}U\,c_{\mu}^{\eta}
+\]
+
+\end_inset
+
+ Given two operators of the form 
+\begin_inset Formula $\sigma^{\nu}=\otimes_{i}X^{\nu_{2i}}Z^{\nu_{2i+1}}$
+\end_inset
+
+ their inner product is 
+\begin_inset Formula 
+\begin{multline*}
+\left\langle \sigma^{\nu}|\sigma^{\mu}\right\rangle =\prod_{i=1}^{L}\frac{1}{q}Tr\left\{ X^{\nu_{2i}}Z^{\nu_{2i+1}}X^{\mu_{2i}}Z^{\mu_{2i+1}}\right\} =\prod_{i=1}^{L}\frac{1}{q}Tr\left\{ X^{\nu_{2i}}e^{\frac{2\pi i}{q}}X^{\mu_{2i}}Z^{\nu_{2i+1}}Z^{\mu_{2i+1}}\right\} =\prod_{i=1}^{L}\frac{1}{q}e^{\frac{2\pi i}{q}\delta_{\mu_{2i}\neq0}\delta_{\nu_{2i+1}\neq0}}Tr\left\{ X^{\nu_{2i}}X^{\mu_{2i}}Z^{\nu_{2i+1}}Z^{\mu_{2i+1}}\right\} =\\
+=\prod_{i=1}^{L}\frac{1}{q}e^{\frac{2\pi i}{q}\delta_{\mu_{2i}\neq0}\delta_{\nu_{2i+1}\neq0}}Tr\left\{ X^{\nu_{2i}+\mu_{2i}}Z^{\nu_{2i+1}+\mu_{2i+1}}\right\} 
+\end{multline*}
+
+\end_inset
+
+This inner-product is non-zero if and only if each of the 
+\begin_inset Formula $L$
+\end_inset
+
+ terms 
+\begin_inset Formula $X^{\nu_{2i}}Z^{\nu_{2i+1}}X^{\mu_{2i}}Z^{\mu_{2i+1}}\propto I$
+\end_inset
+
+, that is iff
+\begin_inset Formula 
+\[
+\begin{cases}
+\nu_{2i}+\mu_{2i} & =0\\
+\nu_{2i+1}+\mu_{2i+1} & =0
+\end{cases}\mod q
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So 
+\begin_inset Formula $\left\langle \sigma^{\nu}|\sigma^{\mu}\right\rangle \neq0$
+\end_inset
+
+ iff the operators act non-trivially on the same sites
+\end_layout
+
+\begin_layout Standard
+A random two-site unitary 
+\begin_inset Formula $W$
+\end_inset
+
+ has the form:
+\begin_inset Formula 
+\[
+W=\sum_{\mu,\nu}a_{\mu,\nu}X^{\mu}Z^{\mu}\otimes X^{\nu}Z^{\nu}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+so 
+\begin_inset Formula $\left\langle \sigma^{\nu}|W\right\rangle \neq0$
+\end_inset
+
+ iff the coefficient for 
+\begin_inset Formula $\sigma^{\nu}$
+\end_inset
+
+ in the sum above is not 0.
+ 
+\end_layout
+
+\begin_layout Standard
+Where the sum 
+\begin_inset Formula $\sum_{\mu,\nu}$
+\end_inset
+
+ runs over all possible combinations, and there are some conditions on the
+ coefficients 
+\begin_inset Formula $a_{\mu,\nu}$
+\end_inset
+
+ s.t.
+ 
+\begin_inset Formula $W$
+\end_inset
+
+ is indeed unitary.
+ 
+\end_layout
+
+\begin_layout Standard
+Circuit state after application of a single gate, averaged over all possible
+ gates:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\overline{\sigma^{\mu}\left(t\right)}=\int dW\,W^{\dagger}\sigma^{\mu}W
+\]
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
