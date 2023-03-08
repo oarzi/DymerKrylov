@@ -255,6 +255,7 @@ def promote_psi_classical(psi, H_ring, H_hop, prob):
     rng = np.random.default_rng()
     shift = rng.choice([0,1,2], 1)
     indices = np.arange(1+shift%3, L-2, 3)
+    indices = rng.permutation(indices)
     gates_i = rng.choice([True, False], size=(psi.shape[0], len(indices)), p =[prob, 1 - prob])
 
     apply = np.empty(gates_i.shape, dtype=object)
@@ -271,10 +272,9 @@ def promote_psi_classical(psi, H_ring, H_hop, prob):
         np.apply_along_axis(apply_gate, 1, zips)
 
     
-def check_detailed_balance(L, times, d, prob=0.5, interval=10):
+def check_detailed_balance(L, times, d, prob=0.5, interval=10, size=1,test_charge=False):
     from IPython import display
     
-    size = 1
     H_ring = np.array([Gate_ring(i) for i in range(1,L - 1)], dtype=object)
     H_hop = np.array([Gate_hop(i) for i in range(1, L - 1)], dtype=object)
     psi = np.repeat(get_initial_config_point(L, d), size, axis=0).reshape(size, 1, 3*L)
@@ -283,11 +283,21 @@ def check_detailed_balance(L, times, d, prob=0.5, interval=10):
     state_vars = [0]
     for i in range(2, times):
         promote_psi_classical(psi, H_ring, H_hop, prob)  
-            
-        if psi.tobytes() in states:
-            states[psi.tobytes()] += 1
-        else:
-            states[psi.tobytes()] = 1
+        
+        if test_charge:
+            charge = defect_density_point(psi[:,0,:])
+            charge_fail = np.argwhere(np.sum(charge, axis=1) != 2)
+            if charge_fail.size > 0:
+                print(psi[charge_fail])
+                print(H_ring[charge_fail])
+                print(H_hop[charge_fail])
+                raise SystemExit("Charge is not conserved")
+        for conf in psi:
+            conf_bytes = conf.tobytes()
+            if conf_bytes in states:
+                states[conf_bytes] += 1
+            else:
+                states[conf_bytes] = 1
         var_i =  np.var(list(states.values()))
         state_vars.append(np.sqrt(var_i)/i)
         if i % interval == 0:

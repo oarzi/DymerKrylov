@@ -51,6 +51,7 @@ class Analysis:
         self.analysis['batch'] = self.batch
         self.analysis['times'] = self.times
         self.analysis['L'] = self.L
+        self.analysis['p'] = self.p
         
         self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
         sites = [np.arange(1, self.rho.shape[1])]
@@ -100,7 +101,9 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
     ax[1].set_title("Speed")
 
     for a in analyses:
-        ax[2].plot(a.analysis['acc'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+        ax[2].plot(a.analysis['acc'][:t_max
+                                    
+                                    ], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
     ax[2].set_title("acceleration")
     
     fig.tight_layout()

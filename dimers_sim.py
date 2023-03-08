@@ -93,15 +93,14 @@ class Simulator:
     def simulate(self):
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
-        thread_size = self.batch//self.batch_procs_num
         with Pool(self.batch_procs_num) as p:
-            c_rhos =  p.map(self.classical_evolutions_batch_points, (thread_size for i in range(self.batch_procs_num)), chunksize=1)
+            c_rhos =  p.map(self.classical_evolutions_batch_points, (self.batch for i in range(self.batch_procs_num)), chunksize=1)
             p.close()
             p.join()
         
         rho = np.array(c_rhos)
         print("before batch sum", rho.shape)
-        rho = np.sum(rho, axis=0)/self.batch
+        rho = np.sum(rho, axis=0)/(self.batch*self.batch_procs_num)
         print("after batch sum", rho.shape)
 
         analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
@@ -189,7 +188,7 @@ class Simulator:
             if np.sum(charge0) !=  psi.shape[0]:
                 with open("bad_matrix{}.txt".format(os.getpid()), "w") as f:
                     np.set_printoptions(threshold=sys.maxsize)
-                    f.write( str(np.sum(charge0)) + "\n")
+                    f.write(str(np.sum(charge0)) + "\n")
                     f.write(str(charge0.shape) + "\n")
                     f.write(str(psi.shape) + "\n")
                     f.write(str(np.argwhere(charge0 != 1)) + "\n")
