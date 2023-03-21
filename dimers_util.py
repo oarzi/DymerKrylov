@@ -255,7 +255,7 @@ def promote_psi_classical(psi, H_ring, H_hop, prob):
     rng = np.random.default_rng()
     shift = rng.choice([0,1,2], 1)
     indices = np.arange(1+shift%3, L-2, 3)
-    indices = rng.permutation(indices)
+    #indices = rng.permutation(indices)
     gates_i = rng.choice([True, False], size=(psi.shape[0], len(indices)), p =[prob, 1 - prob])
 
     apply = np.empty(gates_i.shape, dtype=object)
