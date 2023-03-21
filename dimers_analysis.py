@@ -1,5 +1,6 @@
 from scipy.optimize import curve_fit
 import pickle
+import dimers_sim
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
@@ -19,6 +20,18 @@ class Experiment:
     def save(self):
         with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
             pickle.dump(self, f)
+            
+def get_experiments_from_paths(paths, dir_path="analyses/varying_p/", file_name="varying_p_test", description="description" ):
+    exp_files = []
+    for path in paths:
+        with open(dir_path+path, 'rb') as f:
+            _e = pickle.load(f)
+            exp_files.append(_e)
+    experiment = dimers_sim.Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
+                                      "analyses/good",
+                                      [e.results[0] for e in exp_files],
+                                      description=description)
+    return experiment
 
 @dataclass
 class Analysis:   
@@ -69,6 +82,9 @@ def gaussian(t, a, b):
 def exponential(t, a):
     return a*np.exp(-a*t)
 
+def inv_pol(t, a):
+    return a*np.exp(-a*t)
+
 def dist_fit(ana, fit, t, p0=None):
     #print(ana.rho[t,1:] != 0)
     #print(np.argwhere(ana.rho[t,1:] != 0))
@@ -80,31 +96,49 @@ def dist_fit(ana, fit, t, p0=None):
     #  "Width = {}".format(popt[1]))
     return popt, pcov, x_max, x_min
 
+def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False):
+    ana_times = (ana.times*times).astype(np.int32)
+    plt.figure(1, figsize=(8,16))
+    for i, t in enumerate(zip(times, ana_times)):
+        plt.subplot(100*len(times) + 10 +i+1)
+        popt_t, pcov_t, x_max, x_min = dimers_analysis.dist_fit(ana, f, t[1], p0)
+        xrange = np.arange(x_min, x_max)
+        y = ana.rho[t[1],x_min:x_max]
+        plt.plot(xrange, y, label="Simulation L={}".format(str(ana.L)))
+        plt.plot(xrange, f(xrange, *popt_t),label="{} L={}".format(label, str(ana.L)))
+        plt.title("t={}".format(t[0]))
+        plt.legend()
+        if log_scale_x:
+            plt.xscale("log", base=log_scale_x)
+        if log_scale_y:
+            plt.yscale("log", base=log_scale_y)
+    plt.tight_layout()
+    plt.show()
+
 def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False, t_max=-1):
     lwdt = 1
 
-    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
+    fig, ax = plt.subplots(1, gridspec_kw={'height_ratios':[1]}, figsize=(13, 10))
     if title:
         fig.suptitle(title)
     
     for a in analyses:
         a_label = "{}=".format(label) + str(a.analysis[label])
-        ax[0].plot(a.analysis['Mean'][:t_max], label=a_label, linewidth=lwdt)
-        x = len(a.analysis['Mean'])//2
-        y = a.analysis['Mean'][x]
-        ax[0].annotate(a_label, (x,y))
-    ax[0].legend()
-    ax[0].set_title("Mean position")
+        pos = a.analysis['Mean'][:t_max]
+        ax.plot(pos, label=a_label, linewidth=lwdt)
+        x = len(pos)//2
+        y = pos[x]
+        ax.annotate(a_label, (x,y))
+    ax.legend()
+    ax.set_title("Mean position")
 
-    for a in analyses:
-        ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
-    ax[1].set_title("Speed")
+    # for a in analyses:
+    #     ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+    # ax[1].set_title("Speed")
 
-    for a in analyses:
-        ax[2].plot(a.analysis['acc'][:t_max
-                                    
-                                    ], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
-    ax[2].set_title("acceleration")
+    # for a in analyses:
+    #     ax[2].plot(a.analysis['acc'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+    # ax[2].set_title("acceleration")
     
     fig.tight_layout()
     if log_scale_x:

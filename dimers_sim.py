@@ -20,8 +20,10 @@ class Simulator:
     times: int
     d : int
     
-    batch : int = 0
+    batch : int
+    gate : object = Gate2
     prob : int = 0.5
+    
     
     file_name : str = ""
     dir_name : str = "analyses/"
@@ -114,12 +116,12 @@ class Simulator:
         return analysis
     
     def classical_evolutions_batch_points(self, size):
-        H_ring = np.array([Gate_ring(i) for i in range(1,self.L - 1)], dtype=object)
-        H_hop = np.array([Gate_hop(i) for i in range(1, self.L - 1)], dtype=object)
-        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0).reshape(size, 1, 3*self.L)
+        H_ring = np.array([self.gate(i, False) for i in range(1, self.L - 1)], dtype=object)
+        H_hop = np.array([self.gate(i, True) for i in range(1, self.L - 1)], dtype=object)
+        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0)
         
         
-        charge = defect_density_point(psi[:,0,:])
+        charge = defect_density_point(psi)
         rho = np.sum(charge, axis=0)
         pb = self.progress_bar(range(self.times))
         for i in pb:
@@ -128,7 +130,7 @@ class Simulator:
                 
             promote_psi_classical(psi, H_ring, H_hop, self.prob)  
 
-            charge = defect_density_point(psi[:,0,:])
+            charge = defect_density_point(psi)
             rho = np.vstack((rho, np.sum(charge, axis=0)))
 
         #if not self.local:
