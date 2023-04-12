@@ -20,8 +20,10 @@ class Simulator:
     times: int
     d : int
     
-    batch : int = 0
+    batch : int = 1
+    gate : object = Gate2
     prob : int = 0.5
+    
     
     file_name : str = ""
     dir_name : str = "analyses/"
@@ -93,15 +95,14 @@ class Simulator:
     def simulate(self):
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
-        thread_size = self.batch//self.batch_procs_num
         with Pool(self.batch_procs_num) as p:
-            c_rhos =  p.map(self.classical_evolutions_batch_points, (thread_size for i in range(self.batch_procs_num)), chunksize=1)
+            c_rhos =  p.map(self.classical_evolutions_batch_points, (self.batch for i in range(self.batch_procs_num)), chunksize=1)
             p.close()
             p.join()
         
         rho = np.array(c_rhos)
         print("before batch sum", rho.shape)
-        rho = np.sum(rho, axis=0)/self.batch
+        rho = np.sum(rho, axis=0)/(self.batch*self.batch_procs_num)
         print("after batch sum", rho.shape)
 
         analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
@@ -115,12 +116,12 @@ class Simulator:
         return analysis
     
     def classical_evolutions_batch_points(self, size):
-        H_ring = np.array([Gate_ring(i) for i in range(1,self.L - 1)], dtype=object)
-        H_hop = np.array([Gate_hop(i) for i in range(1, self.L - 1)], dtype=object)
-        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0).reshape(size, 1, 3*self.L)
+        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
+        H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
+        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0)
         
         
-        charge = defect_density_point(psi[:,0,:])
+        charge = defect_density_point(psi)
         rho = np.sum(charge, axis=0)
         pb = self.progress_bar(range(self.times))
         for i in pb:
@@ -128,8 +129,8 @@ class Simulator:
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
                 
             promote_psi_classical(psi, H_ring, H_hop, self.prob)  
-            
-            charge = defect_density_point(psi[:,0,:])
+
+            charge = defect_density_point(psi)
             rho = np.vstack((rho, np.sum(charge, axis=0)))
 
         #if not self.local:
@@ -189,7 +190,7 @@ class Simulator:
             if np.sum(charge0) !=  psi.shape[0]:
                 with open("bad_matrix{}.txt".format(os.getpid()), "w") as f:
                     np.set_printoptions(threshold=sys.maxsize)
-                    f.write( str(np.sum(charge0)) + "\n")
+                    f.write(str(np.sum(charge0)) + "\n")
                     f.write(str(charge0.shape) + "\n")
                     f.write(str(psi.shape) + "\n")
                     f.write(str(np.argwhere(charge0 != 1)) + "\n")

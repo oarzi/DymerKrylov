@@ -1,0 +1,574 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\use_hyperref false
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P\left(x,t\right)=p_{R}P\left(x-1,t-1\right)+p_{0}P\left(x,t-1\right)+p_{L}P\left(x+1,t-1\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{R}\left(x,t\right)=\frac{1}{1+p+p^{2}};\;p_{0}\left(x,t\right)=\frac{p}{1+p+p^{2}};\;p_{L}\left(x,t\right)=\frac{p^{2}}{1+p+p^{2}};\;p>1,x>0,t\geq0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{R}=0;\;p'_{0}=\frac{1}{1+p};\;p_{L}=\frac{p^{2}}{1+p};\;p>1,x=0,t\geq0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(\begin{array}{c}
+P\left(x-1,t\right)\\
+P\left(x,t\right)\\
+P\left(x+1,t\right)
+\end{array}\right)=\left(\begin{array}{ccc}
+\\
+p_{R} & p_{0} & p_{L}\\
+\\
+\end{array}\right)\left(\begin{array}{c}
+P\left(x-1,t-1\right)\\
+P\left(x,t-1\right)\\
+P\left(x+1,t-1\right)
+\end{array}\right)p_{R}P\left(x-1,t-1\right)+p_{0}P\left(x,t-1\right)+p_{L}P\left(x+1,t-1\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P\left(x,t\right)=M_{x}\cdot P\left(x,t-1\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+The equation of state does not have exponentially decaying solutions:
+\begin_inset Newline newline
+\end_inset
+
+Assume at a certain moment the distribution is exponentially decaying: 
+\begin_inset Formula $P\left(x,t\right)=c^{x}$
+\end_inset
+
+, 
+\begin_inset Formula $\left|c\right|<1$
+\end_inset
+
+.
+ The equation of state is then - 
+\begin_inset Formula 
+\[
+P\left(x,t\right)=p_{R}c^{x-1}+p_{0}c^{x}+p_{L}c^{x+1}=c^{x-1}\left(p_{R}+p_{0}c+p_{L}c^{2}\right)=c^{x-1}\left(\frac{1+pc+p^{2}c^{2}}{1+p+p^{2}}\right)=c^{x}\left(\frac{c^{-1}+p+p^{2}c}{1+p+p^{2}}\right)
+\]
+
+\end_inset
+
+Look at 
+\begin_inset Formula $x=0$
+\end_inset
+
+:
+\begin_inset Formula 
+\[
+P\left(0,t\right)=p'_{0}+p'_{L}c=1\Rightarrow\frac{1}{1+p}+\frac{p}{1+p}c=1\Rightarrow c=\frac{1+p}{p}\left(1-\frac{1}{1+p}\right)=\frac{1+p}{p}\frac{p}{1+p}=1
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+What about power-law decay? 
+\begin_inset Formula $P\left(x,t\right)=\frac{1}{x^{n}}$
+\end_inset
+
+
+\begin_inset Formula 
+\[
+P\left(x,t\right)=p_{R}\frac{1}{\left(x-1\right)^{n}}+p_{0}\frac{1}{x^{n}}+p_{L}\frac{1}{\left(x+1\right)^{n}}=c^{x-1}\left(p_{R}+p_{0}c+p_{L}c^{2}\right)=c^{x-1}\left(\frac{1+pc+p^{2}c^{2}}{1+p+p^{2}}\right)=c^{x}\left(\frac{c^{-1}+p+p^{2}c}{1+p+p^{2}}\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+M\vec{v}=\lambda v
+\]
+
+\end_inset
+
+Implies:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+0+M_{0,0}v_{0}+M_{0,1}v_{1}=\lambda v_{0}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+M_{i,i-1}v_{i-1}+M_{i,i}v_{i}+M_{i,i+1}v_{i+1}=\lambda v_{i};\;i=1,\dots,L-2
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+M_{L-1,L-2}v_{L-2}+M_{L-1}v_{L-1}+0=\lambda v_{L-1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\vec{u}=M\vec{v}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left\Vert \vec{u}\right\Vert =\sqrt{\vec{u}^{T}u}=\sqrt{\sum_{i}u_{i}^{2}}=\sqrt{\sum_{i}\left(M_{i,j}v_{j}\right)^{2}}=\sqrt{\left(M_{0,0}v_{0}+M_{0,1}v_{1}\right)^{2}+\left(M_{L-1,L-2}v_{L-2}+M_{L-1}v_{L-1}\right)^{2}+\sum_{i=1}^{L-2}\left(M_{i,i-1}v_{i-1}+M_{i,i}v_{i}+M_{i,i+1}v_{i+1}\right)^{2}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{multline*}
+\frac{1}{\sqrt{2}}\left(\bra{=}-\bra{\left\Vert \right\Vert }\right)\frac{1}{\sqrt{2}}\left(\ket{=}-\ket{\left\Vert \right\Vert }\right)=\frac{1}{2}\left(\bra{=}\ket{=}-\cancel{\bra{=}\ket{\left\Vert \right\Vert }}\right)-\frac{1}{2}\left(\cancel{\bra{\left\Vert \right\Vert }\ket{=}}-\bra{\left\Vert \right\Vert }\ket{\left\Vert \right\Vert }\right)=\\
+=\frac{1}{2}\bra{=}\ket{=}+\frac{1}{2}\bra{\left\Vert \right\Vert }\ket{\left\Vert \right\Vert }=1
+\end{multline*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left|M-\lambda I\right|=\left(\frac{1}{1+p}-1\right)\left(\frac{1}{1+p+p^{2}}-1\right)^{N-2}\left(\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+With generatig functions:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P\left(x,t\right)=p_{R}P\left(x-1,t-1\right)+p_{0}P\left(x,t-1\right)+p_{L}P\left(x+1,t-1\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+assume -
+\begin_inset Formula 
+\[
+f\left(r,s\right)=\sum_{\substack{i\geq0\\
+\tau\geq0
+}
+}P\left(i,\tau\right)r^{i}s^{\tau}=\sum_{i\geq0}P\left(i,0\right)r^{i}+\sum_{\substack{i\geq0\\
+\tau\geq1
+}
+}P\left(i,\tau\right)r^{i}s^{\tau}=r^{\chi}+\sum_{\substack{i=0\\
+\tau\geq1
+}
+}P\left(0,\tau\right)s^{\tau}+\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i,\tau\right)r^{i}s^{\tau}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+P\left(x,0\right)=\delta_{x,\chi}\\
+P\left(x,t\right)=0 & t<0
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where 
+\begin_inset Formula $\chi\in\left[0,L\right]$
+\end_inset
+
+ is the initial location of the defect.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{multline*}
+f\left(r,s\right)=r^{\chi}+\sum_{\substack{i=0\\
+\tau\geq1
+}
+}\left(p'_{0}P\left(0,\tau-1\right)+p'_{L}P\left(1,\tau-1\right)\right)s^{\tau}+\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}\left(p_{R}P\left(i-1,\tau-1\right)+p_{0}P\left(i,\tau-1\right)+p_{L}P\left(i+1,\tau-1\right)\right)r^{i}s^{\tau}=\\
+=r^{\chi}+p'_{0}\sum_{\substack{i=0\\
+\tau\geq1
+}
+}P\left(0,\tau-1\right)s^{\tau}+p'_{L}\sum_{\substack{i=0\\
+\tau\geq1
+}
+}P\left(1,\tau-1\right)s^{\tau}+p_{R}\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i-1,\tau-1\right)r^{i}s^{\tau}+p_{0}\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i,\tau-1\right)r^{i}s^{\tau}+p_{L}\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i+1,\tau-1\right)r^{i}s^{\tau}=\\
+=r^{\chi}+sp'_{0}\sum_{\substack{i=0\\
+\tau\geq1
+}
+}P\left(0,\tau-1\right)s^{\tau-1}+sp'_{L}\sum_{\substack{i=0\\
+\tau\geq1
+}
+}P\left(1,\tau-1\right)s^{\tau-1}+rsp_{R}\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i-1,\tau-1\right)r^{i-1}s^{\tau-1}+sp_{0}\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i,\tau-1\right)r^{i}s^{\tau-1}+\frac{s}{r}p_{L}\sum_{\substack{i\geq1\\
+\tau\geq1
+}
+}P\left(i+1,\tau-1\right)r^{i+1}s^{\tau-1}=\\
+=r^{\chi}+sp'_{0}\sum_{\substack{i=0\\
+\tau\geq0
+}
+}P\left(0,\tau\right)s^{\tau}+sp'_{L}\sum_{\substack{i=1\\
+\tau\geq0
+}
+}P\left(1,\tau\right)s^{\tau}+rsp_{R}\sum_{\substack{i\geq0\\
+\tau\geq0
+}
+}P\left(i,\tau\right)r^{i}s^{\tau}+sp_{0}\sum_{\substack{i\geq1\\
+\tau\geq0
+}
+}P\left(i,\tau\right)r^{i}s^{\tau}+\frac{s}{r}p_{L}\sum_{\substack{i\geq2\\
+\tau\geq0
+}
+}P\left(i,\tau\right)r^{i}s^{\tau}=
+\end{multline*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We would like to group elements with the same powers:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P\left(x,t\right)=\sum_{i,\tau}\left(p_{R}p_{i+1,\tau}+p_{0}p_{i,\tau}+p_{L}p_{i-1,\tau}\right)x^{i}t^{\tau-1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\int_{a}^{b}\frac{1}{r}dr=\ln r|_{a}^{b}=\ln\frac{b}{a}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\int_{a}^{b}\frac{1}{r^{n}}dr=-\frac{1}{n-1}\frac{1}{r^{n-1}}|_{a}^{b}=\left(-\frac{1}{n-1}\frac{1}{b^{n-1}}\right)-\left(-\frac{1}{n-1}\frac{1}{a^{n-1}}\right)=\frac{1}{n-1}\frac{1}{a^{n-1}}-\frac{1}{n-1}\frac{1}{b^{n-1}}=\frac{1}{n-1}\left(\frac{1}{a^{n-1}}-\frac{1}{b^{n-1}}\right)\underset{b\rightarrow\infty}{\rightarrow}\frac{1}{n-1}\frac{1}{a^{n-1}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So a normalized pdf is 
+\begin_inset Formula $p\left(r\right)=\frac{\left(n-1\right)a^{n-1}}{r^{n}}$
+\end_inset
+
+ where 
+\begin_inset Formula $r>1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\phi^{2}-\phi-1=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+\phi^{2} & =\phi+1\\
+\phi^{3} & =\phi^{2}+\phi=2\phi+1\\
+\phi^{4} & =2\phi^{2}+\phi=3\phi+2
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\phi+\phi^{2}}{1+\phi+\phi^{2}}+\frac{1}{1+\phi+\phi^{2}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{\phi+\phi^{2}}{1+\phi+\phi^{2}}+\frac{\phi^{2}}{1+\phi+\phi^{2}}
+\]
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{L}\left(x>0\right)=\frac{\phi^{L-\left(x-1\right)}}{\phi^{L-\left(x-1\right)}+\phi^{L-x}+\phi^{L-\left(x+1\right)}}=\frac{\phi^{L-\left(x-1\right)}}{\phi^{L-x}\phi^{1}+\phi^{L-x}+\phi^{L-x}\phi^{-1}}=\frac{\phi^{L-x}\phi}{\phi^{L-x}\left(\phi+1+\phi^{-1}\right)}=\frac{\phi}{\phi+1+\phi^{-1}}=\frac{\phi^{2}}{\phi^{2}+\phi+1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{0}\left(x>0\right)=\frac{\phi^{L-x}}{\phi^{L-\left(x-1\right)}+\phi^{L-x}+\phi^{L-\left(x+1\right)}}=\frac{\phi^{L-x}}{\phi^{L-x}\phi^{1}+\phi^{L-x}+\phi^{L-x}\phi^{-1}}=\frac{\phi^{L-x}}{\phi^{L-x}\left(\phi+1+\phi^{-1}\right)}=\frac{1}{\phi+1+\phi^{-1}}=\frac{\phi}{\phi^{2}+\phi+1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{R}\left(x>0\right)=\frac{\phi^{L-\left(x+1\right)}}{\phi^{L-\left(x-1\right)}+\phi^{L-x}+\phi^{L-\left(x+1\right)}}=\frac{\phi^{L-\left(x-1\right)}}{\phi^{L-x}\phi^{1}+\phi^{L-x}+\phi^{L-x}\phi^{-1}}=\frac{\phi^{L-x}\phi^{-1}}{\phi^{L-x}\left(\phi+1+\phi^{-1}\right)}=\frac{\phi^{-1}}{\phi+1+\phi^{-1}}=\frac{1}{\phi^{2}+\phi+\phi}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{L}\left(x=0\right)=0
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{0}\left(x=0\right)=\frac{\phi^{L}}{\phi^{L}+\phi^{L-1}}=\frac{\phi^{L}}{\phi^{L}+\phi^{L}\phi^{-1}}=\frac{\phi^{L}}{\phi^{L}\left(1+\phi^{-1}\right)}=\frac{1}{1+\phi^{-1}}=\frac{\phi}{\phi+1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+p_{R}\left(x=0\right)=\frac{\phi^{L-1}}{\phi^{L}+\phi^{L-1}}=\frac{\phi^{L-1}}{\phi^{L}+\phi^{L}\phi^{-1}}=\frac{\phi^{L}\phi^{-1}}{\phi^{L}\left(1+\phi^{-1}\right)}=\frac{\phi^{-1}}{1+\phi^{-1}}=\frac{1}{\phi+1}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

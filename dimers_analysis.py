@@ -1,6 +1,5 @@
 from scipy.optimize import curve_fit
 import pickle
-import dimers_sim
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
@@ -27,7 +26,7 @@ def get_experiments_from_paths(paths, dir_path="analyses/varying_p/", file_name=
         with open(dir_path+path, 'rb') as f:
             _e = pickle.load(f)
             exp_files.append(_e)
-    experiment = dimers_sim.Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
+    experiment = Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
                                       "analyses/good",
                                       [e.results[0] for e in exp_files],
                                       description=description)
@@ -70,7 +69,9 @@ class Analysis:
         sites = [np.arange(1, self.rho.shape[1])]
 
         self.analysis['Mean'] = np.average(np.repeat(sites,self.rho.shape[0],axis=0), axis=1, weights=self.rho[:, 1:]).reshape(self.analysis['Median'].shape)
+        
         self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
+        
         self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
         self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
         print("Analysis end")
@@ -96,16 +97,18 @@ def dist_fit(ana, fit, t, p0=None):
     #  "Width = {}".format(popt[1]))
     return popt, pcov, x_max, x_min
 
+
+
 def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False):
     ana_times = (ana.times*times).astype(np.int32)
     plt.figure(1, figsize=(8,16))
     for i, t in enumerate(zip(times, ana_times)):
         plt.subplot(100*len(times) + 10 +i+1)
-        popt_t, pcov_t, x_max, x_min = dimers_analysis.dist_fit(ana, f, t[1], p0)
+        popt_t, pcov_t, x_max, x_min = dist_fit(ana, f, t[1], p0)
         xrange = np.arange(x_min, x_max)
         y = ana.rho[t[1],x_min:x_max]
         plt.plot(xrange, y, label="Simulation L={}".format(str(ana.L)))
-        plt.plot(xrange, f(xrange, *popt_t),label="{} L={}".format(label, str(ana.L)))
+        plt.plot(xrange, f(xrange, *popt_t),label="{} fit L={}, {}".format(label, str(ana.L), *popt_t))
         plt.title("t={}".format(t[0]))
         plt.legend()
         if log_scale_x:
