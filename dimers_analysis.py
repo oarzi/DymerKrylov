@@ -125,23 +125,24 @@ def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False)
 def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False, t_max=-1):
     lwdt = 1
 
-    fig, ax = plt.subplots(1, gridspec_kw={'height_ratios':[1]}, figsize=(13, 10))
+    fig, ax = plt.subplots(2, gridspec_kw={'height_ratios':[1, 1]}, figsize=(13, 10))
     if title:
         fig.suptitle(title)
     
     for a in analyses:
         a_label = "{}=".format(label) + str(a.analysis[label])
         pos = a.analysis['Mean'][:t_max]
-        ax.plot(pos, label=a_label, linewidth=lwdt)
+        ax[0].plot(pos, label=a_label, linewidth=lwdt)
         x = len(pos)//2
         y = pos[x]
-        ax.annotate(a_label, (x,y))
-    ax.legend()
-    ax.set_title("Mean position")
+        ax[0].annotate(a_label, (x,y))
+    ax[0].legend()
+    ax[0].set_title("Mean position")
 
-    # for a in analyses:
-    #     ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
-    # ax[1].set_title("Speed")
+    for a in analyses:
+        ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+    ax[1].legend()
+    ax[1].set_title("Speed")
 
     # for a in analyses:
     #     ax[2].plot(a.analysis['acc'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)

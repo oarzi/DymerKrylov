@@ -226,18 +226,23 @@ def get_experiment_args():
     parser = argparse.ArgumentParser(prog='Parallel execution of experiments and their analysis.', allow_abbrev=False)
     subparsers = parser.add_subparsers(help='Choose experiment', required=True, dest='experiment')
 
-    parser_varying_batch_size = subparsers.add_parser('q', help='Quantum simulation', allow_abbrev=False)
+    parser_quantum = subparsers.add_parser('q', help='Quantum simulation', allow_abbrev=False)
     
-        parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
-    parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
-    parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
-    
-    parser_varying_batch_size.add_argument("--name", help="File prefix",
+    parser_quantum.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_quantum.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
+    parser_quantum.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+', required=True)
+    parser_quantum.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
+    parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+                                                   required=True, default=0.5)
+    parser_quantum.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='def')
+    
+    parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
     
     parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
     parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
+    
     parser_varying_batch_size.add_argument("--batch", help="Number of trajectories over which path is averaged.", type=int,
                                            nargs='+', required=True)
     parser_varying_batch_size.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int,
@@ -256,6 +261,8 @@ def get_experiment_args():
                                                    required=True)
     parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs='+',
                                                    required=True)
+        parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+                                                   required=True, defailt=0.5)
     parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
                                                    type=int, nargs=1, required=True)
     parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
