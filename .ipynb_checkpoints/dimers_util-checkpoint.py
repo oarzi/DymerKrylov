@@ -5,6 +5,9 @@ import numpy as np
 import struct
 import scipy.sparse as sparse
 import os
+from numba import int32, boolean
+from numba.experimental import jitclass
+from numba import jit
 
         
 def defect_density(psi):
@@ -29,18 +32,22 @@ def defect_density_point(psi):
     L = psi.shape[-1]//3
     
     # Upper row
-    edge_01 = np.arange(1,3*L,3)%(3*L)
-    edge_10 = np.arange(3,3*(L+1),3)%(3*L) 
-    edge_11 = np.arange(4,3*(L+1),3)%(3*L)
+    edge_01 = np.arange(1, 3*(L - 1), 3)
+    edge_10 = np.arange(3, 3*L, 3)
+    edge_11 = np.arange(4, 3*L, 3)
     
     # Lower row
-    edge_02 = np.arange(2,3*L,3)%(3*L)
-    edge_12 = np.arange(5,3*(L+1),3)%(3*L)
+    edge_02 = np.arange(2,3*L - 1,3)
+    edge_12 = np.arange(5,3*L,3)
     
     psi_down = (psi[:, edge_01] + psi[:, edge_10] + psi[:, edge_11] + 1) % 2
     psi_up = (psi[:, edge_02] + psi[:, edge_10] + psi[:, edge_12] + 1) % 2
     
-    return np.roll(psi_down + psi_up, 1)
+    psi_down0 = (psi[:, 0] + psi[:, 1] + 1) % 2
+    psi_up0 = (psi[:, 0] + psi[:, 2]  + 1) % 2
+    psi_0 = (psi_down0 + psi_up0).reshape(psi.shape[0], 1)
+    
+    return np.hstack((psi_0 , psi_down + psi_up))
 
 def defect_density_points_quantum(configs,psi):
     psi2 = np.abs(psi**2)
@@ -67,25 +74,22 @@ def get_initial_config(L, d):
     
     return c0
 
-def get_initial_config_point(L, d):
-    if (d < 1 or d >=L):
+def get_initial_config_point(L, defect):
+    if (defect < 1 or defect >=L):
         raise ValueError("d= {} provided can't be to close to other defect".format(d))
-    # print(L)
-    # print(d)
-    # print(configs.shape)
+
     c0 = np.zeros((1,3*L), dtype=np.int8)
     c0[0, 0] = 0
     c0[0, 2] = 0
-    defect = int(d)
+
     for i in range(0,defect):
         c0[0, 3*i + 1 + i%2] = 1
-    for i in range(defect + 1,L,2):
+   
+    for i in range(defect + 1,L - 1,2):
         c0[0, 3*i + 1] = 1
         c0[0, 3*i + 2] = 1
         
-    c0[0, -1] = 0
-    c0[0, -2] = 0
-    if (L - d) % 2 == 0:
+    if (L - defect) % 2 == 0:
         c0[0, -3] = 1
     
     return c0
@@ -105,17 +109,6 @@ def get_h_ring(L):
     
     H_ring = list(map(ring, hrings))
     return H_ring
-
-@dataclass
-class ring:
-    sites : np.ndarray
-    def __call__(self, config):
-        return self.apply(config)
-    def apply(self, config):
-        if (config[self.sites[0]] == config[self.sites[1]]) and (config[self.sites[2]] == config[self.sites[3]]) and (config[self.sites[0]] != config[self.sites[2]]):  
-            config[self.sites] = 1- config[self.sites]
-        return config
-
 
 def get_h_hop(L):
     i = np.arange(0,L);
@@ -150,7 +143,20 @@ def get_h_hop(L):
     
     H_hops = list(map(hop, h_hops))
     return H_hops
-    
+
+
+@dataclass
+class ring:
+    sites : np.ndarray
+    def __call__(self, config):
+        return self.apply(config)
+    def apply(self, config):
+        if (config[self.sites[0]] == config[self.sites[1]]) and (config[self.sites[2]] == config[self.sites[3]]) and (config[self.sites[0]] != config[self.sites[2]]):  
+            config[self.sites] = 1- config[self.sites]
+        return config
+
+
+
 @dataclass
 class hop:
     sites : np.ndarray
@@ -160,6 +166,169 @@ class hop:
         if (config[self.sites[0]] != config[self.sites[3]]) and (config[self.sites[1]] + config[self.sites[2]] == 1) and (config[self.sites[4]] + config[self.sites[5]] == 1):  
             config[self.sites[[0,3]]] = 1 - config[self.sites[[0,3]]]
         return config
+    
+@jit(nopython=True)
+def jit_ring(i, config, rng):
+    rng = np.random.default_rng()
+    idx, = np.where((config[:, 3*self.i:3*(self.i+1) + 1] == self.ring_list[:,None]).all(axis=-1).any(0))    
+    config[idx, 3*self.i:3*(self.i+1) + 1] = self.rng.choice(self.ring_list, size=idx.size)
+
+    return config
+
+@dataclass
+class Gate2:
+    i: int
+    do_hop: bool
+    max_i : bool = False
+    
+    def __post_init__(self):
+        self.rng = np.random.default_rng()
+        self.ring_list = np.array([[1,0,0,1],
+                                   [0,1,1,0]])
+        if self.i == 0:
+            hop_list_up1 = np.array([[0,1,0,0,0,0,1], 
+                                     [0,1,0,0,0,1,0]])
+
+            hop_list_up2 = np.array([[0,1,0,0,0,0,0]])
+            
+            self.hop_list = [hop_list_up1, hop_list_up2]
+        elif self.max_i:
+            hop_list_up1 = np.array([[0,1,0,0,0,0], 
+                                     [0,0,0,1,0,0]])
+
+            hop_list_down1 = np.array([[0,0,1,0,0,0], 
+                                       [0,0,0,1,0,0]])
+
+            self.hop_list = [hop_list_up1, hop_list_down1]
+        else:
+            hop_list_up1 = np.array([[0,1,0,0,0,0,1], 
+                                     [0,0,0,1,0,0,1],
+                                     [0,1,0,0,0,1,0]])
+
+            hop_list_up2 = np.array([[0,1,0,0,0,0,0], 
+                                     [0,0,0,1,0,0,0]])
+
+            hop_list_down1 = np.array([[0,0,1,0,0,0,1], 
+                                       [0,0,1,0,1,0,0],
+                                       [0,0,0,1,0,0,1]])
+
+            hop_list_down2 = np.array([[0,0,1,0,0,0,0], 
+                                       [0,0,0,1,0,0,0]])
+            
+            self.hop_list = [hop_list_up1, hop_list_up2, hop_list_down1, hop_list_down2]
+        
+    def __call__(self, config):
+        # print(config.shape)
+        return self.hop(config) if self.do_hop else self.ring(config)
+    
+    def ring(self, config):
+        # print(config)
+        idx, = np.where((config[:, 3*self.i:3*(self.i+1) + 1] == self.ring_list[:,None]).all(axis=-1).any(0))    
+        config[idx, 3*self.i:3*(self.i+1) + 1] = self.rng.choice(self.ring_list, size=idx.size)
+        # print(config)
+        return config
+    
+    def hop(self, config):
+        # print(config)
+        pre = config.copy()
+        old = np.array(config[:, 3*self.i:3*(self.i+2) + (0 if self.max_i else 1)])
+        idx_list = [np.where(( old == hop_conf[0,None,None]).all(axis=-1).any(0))[0] for hop_conf in self.hop_list] 
+        
+        # print(idx_list)
+
+        # print(idx_up1)
+        # print(idx_up2)
+        # print(idx_down1)
+        # print(idx_down2)
+        
+        for idx, hop_conf in zip(idx_list, self.hop_list):
+            config[idx, 3*self.i:3*(self.i+2) + (0 if  self.max_i else 1)] = self.rng.choice(hop_conf, size=idx.size)
+
+        charge = defect_density_point(config)
+        charge_fail = np.argwhere(np.sum(charge, axis=1) != 2)
+        if charge_fail.size > 0:
+            print(self.i)
+            print(charge_fail)
+
+            # print(idx_up1)
+            # print(idx_up2)
+            # print(idx_down1)
+            # print(idx_down2)
+            plot_conf(pre[charge_fail])
+            print(defect_density_point(pre)[charge_fail])
+            plot_conf(config[charge_fail])
+            print(charge[charge_fail])
+            raise SystemExit("Charge is not conserved")
+        
+        # print(config)
+        return config    
+    
+@dataclass
+class Gate1:
+    i: int
+    do_hop: bool
+    
+    #def __post_init__(self):
+     #   self.rng = np.random.default_rng()
+    
+    def __call__(self, config):
+        #print(config.shape)
+        #which = self.rng.choice([True, False], p =[self.prob, 1 - self.prob])
+        return self.hop(config) if self.do_hop else self.ring(config)
+    
+    def ring(self, config):
+        cond = np.logical_and(np.logical_and(config[:, 3*self.i] == config[:, 3*(self.i + 1)],config[:, 3*self.i + 1] == config[:, 3*self.i + 2]), config[:, 3*self.i] != config[:, 3*self.i + 1])
+        if np.any(cond):
+         #   print(cond)
+            start, end = 3*self.i, 3*(self.i+1) + 1
+            config[cond, start:end] = 1 - config[cond, start:end]
+
+        return config
+    
+    def hop(self, config):
+        cond_top_right = np.logical_and(np.logical_and(config[:, 3*(self.i + 1)] == config[:, 3*(self.i + 1)+2],
+                                                        config[:, 3*(self.i + 1)+2] == config[:, 3*self.i + 2]   ),
+                                         config[:, 3*self.i + 2] == 0)
+        
+        cond_top_left = np.logical_and(np.logical_and(config[:, 3*(self.i - 1) + 2] == config[:, 3*self.i],
+                                                      config[:, 3*self.i] == config[:, 3*self.i + 2]) ,
+                                       config[:, 3*self.i + 2] == 0)
+        
+        cond_bottom_right = np.logical_and(np.logical_and(config[:, 3*self.i + 1] == config[:, 3*(self.i+1)] ,
+                                                          config[:, 3*(self.i+1)] == config[:, 3*(self.i+1) + 1]),
+                                           config[:, 3*(self.i+1) + 1] == 0)
+        
+        cond_bottom_left = np.logical_and(np.logical_and(config[:, 3*(self.i - 1) + 1] == config[:, 3*self.i], 
+                                                         config[:, 3*self.i] == config[:, 3*self.i + 1]),
+                                          config[:, 3*self.i + 1] == 0)
+
+        if np.any(cond_top_right):
+          #  print("tr", cond_top_right)
+           # print(config[cond_top_right])
+            config[cond_top_right, 3*self.i + 1], config[cond_top_right, 3*(self.i + 1)] = config[cond_top_right, 3*(self.i + 1)], config[cond_top_right, 3*self.i + 1]
+            #print(config[cond_top_right])
+        
+        if np.any(cond_top_left):
+            #print("tl", cond_top_left)
+            #print(config[cond_top_left])
+            config[cond_top_left, 3*(self.i + 1)], config[cond_top_left,3*self.i + 2] = config[cond_top_left,3*self.i + 2], config[cond_top_left,3*(self.i + 1)]
+            #print(config[cond_top_left])
+        
+        if np.any(cond_bottom_right):
+            #print("br", cond_bottom_right)
+            #print(config[cond_bottom_right])
+            config[cond_bottom_right, 3*self.i + 2], config[cond_bottom_right, 3*(self.i + 1)] = config[cond_bottom_right,3*(self.i + 1)], config[cond_bottom_right,3*self.i + 2]
+            #print(config[cond_bottom_right])
+    
+        if np.any(cond_bottom_left):
+            #print("bl", cond_bottom_left)
+            #print(config[cond_bottom_left])
+            config[cond_bottom_left, 3*self.i + 1], config[cond_bottom_left,3*(self.i + 1)] = config[cond_bottom_left, 3*(self.i + 1)], config[cond_bottom_left, 3*self.i + 1]
+            #print(config[cond_bottom_left])
+        return config
+
+       
+    
 
 @dataclass
 class Gate_ring:
@@ -176,9 +345,10 @@ class Gate_ring:
             # config[range(3*self.i ,3*(self.i+1) + 1)] = 1 - config[range(3*self.i ,3*(self.i+1) + 1)]
         return
     
+    
+    
 @dataclass
 class Gate_hop:
-    # Verify this function! Is the return correct?
     i : int
     def __call__(self, config):
         #print(type(config))
@@ -229,72 +399,119 @@ class Gate_hop:
         return
             
             
-def plot_conf(c):
-    c=c.reshape(c.size)
-    L = len(c)//3
-    color = ['k','r']
-    plt.figure(figsize=[L,1])
-    if c[0] == c[2]  == 0:
-            plt.scatter([0],[1],c='r', marker='+', s=10, linewidths=5) # defect
-    for i in range(L):
-        if c[3*i] + c[3*((i-1)%L)+2] + c[3*i+2] == 0:
-            plt.scatter([i],[1],c='r', marker='+', s=10, linewidths=5) # defect
-        if c[3*i] + c[3*((i-1)%L)+1] + c[3*i+1] == 0:
-            plt.scatter([i],[0],c='r', marker='+', s=10, linewidths=5) # defect
-            
-        plt.plot([i,i],[0,1],color[int(c[3*i])],linewidth=3*c[3*i]+1) #vertical
-        plt.plot([i,i+1],[0,0],color[int(c[3*i+1])],linewidth=3*c[3*i+1]+1) # horizontal
-        plt.plot([i,i+1],[1,1],color[int(c[3*i+2])],linewidth=3*c[3*i+2]+1) # vertical
-        
-    plt.axis('off')
-    stripped = str(c).translate(str.maketrans({"[": "", "]": "", " ": "", "\n":""}))
-    # print([stripped[i:i + 3] for i in range(0, len(stripped), 3)])
-    
-def promote_psi_classical(psi, H_ring, H_hop, prob):
-    L = psi.shape[-1]//3
+def plot_conf(psi):
+    for c in psi:
+        c=c.reshape(c.size).astype(np.int32)
+        L = len(c)//3
+        color = ['k','r']
+        plt.figure(figsize=[L,1])
+        if c[0] == c[2]  == 0:
+                plt.scatter([0],[1],c='r', marker='+', s=10, linewidths=5) # defect
+        for i in range(L):
+            if c[3*i] + c[3*((i-1)%L)+2] + c[3*i+2] == 0:
+                plt.scatter([i],[1],c='r', marker='+', s=10, linewidths=5) # defect
+            if c[3*i] + c[3*((i-1)%L)+1] + c[3*i+1] == 0:
+                plt.scatter([i],[0],c='r', marker='+', s=10, linewidths=5) # defect
+
+            plt.plot([i,i],[0,1],color[c[3*i]],linewidth=3*c[3*i]+1) #vertical
+            plt.plot([i,i+1],[0,0],color[c[3*i+1]],linewidth=3*c[3*i+1]+1) # horizontal
+            plt.plot([i,i+1],[1,1],color[c[3*i+2]],linewidth=3*c[3*i+2]+1) # horizontal
+        # plt.plot([L,L],[0,1],color[int(c[3*L])],linewidth=3*c[3*L]+1) #vertical
+
+        plt.axis('off')
+        # stripped = str(c).translate(str.maketrans({"[": "", "]": "", " ": "", "\n":""}))
+        # print([stripped[i:i + 3] for i in range(0, len(stripped), 3)])
+
+def promote_psi_classical(psi, H_ring, H_hop, prob_ring):
     rng = np.random.default_rng()
-    shift = rng.choice([0,1,2], 1)
-    indices = np.arange(1+shift%3, L-2, 3)
-    gates_i = rng.choice([True, False], size=(psi.shape[0], len(indices)), p =[prob, 1 - prob])
-
-    apply = np.empty(gates_i.shape, dtype=object)
-    rings_i = np.argwhere(gates_i)
-    hops_i = np.argwhere(np.logical_not(gates_i))
-    apply[rings_i[:,0], rings_i[:,1]] = H_ring[indices[rings_i[:,1]]]
-    apply[hops_i[:,0], hops_i[:,1]] = H_hop[indices[hops_i[:,1]]]
-
-    def apply_gate(f):
-        return f[0](f[1])
-
-    for row_gate in apply.T:
-        zips = np.array(list(zip(row_gate, psi)), dtype=object)
-        np.apply_along_axis(apply_gate, 1, zips)
+    shift = rng.choice([0, 1, 2], 1)
+    # indices = shift + np.arange(0, psi.shape[1]//3-1, 3)
+    indices = np.arange(shift + 0, psi.shape[1]//3-1, 3)
+    rng.shuffle(indices)
+    # print(indices)
+    gates_i = rng.choice([True, False], size=(psi.shape[0], indices.size), p =[prob_ring, 1 - prob_ring])
+    # print(gates_i)
+    # for psi_i, (idx, row_gate) in enumerate(zip(indices, gates_i)):
+    #     for i, gate in zip(idx, row_gate):
+    #         if i < psi.shape[1]//3-1:
+    #             # print(psi[psi_i])
+    #             psi[psi_i] = H_ring[i](psi[psi_i, None]) if gate else H_hop[i](psi[psi_i, None])
+    #             # print(psi[psi_i])
+                
+    for i,row_gate in zip(indices, gates_i.T):
+        rings_i = np.argwhere(row_gate)
+        if rings_i.size > 0:
+            rings_i = rings_i.reshape(rings_i.size)
+            psi[rings_i] =  H_ring[i](psi[rings_i])
+            # psi[rings_i] =  ring2(i, psi[rings_i], rng)
+        hops_i = np.argwhere(np.logical_not(row_gate))
+        if hops_i.size > 0:
+            hops_i = hops_i.reshape(hops_i.size)
+            psi[hops_i] = H_hop[i](psi[hops_i])
+            # psi[hops_i] = hop2(i, psi[hops_i], rng)
+    return psi
 
     
-def check_detailed_balance(L, times, d, prob=0.5, interval=10):
+def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1,test_charge=False):
     from IPython import display
     
-    size = 1
-    H_ring = np.array([Gate_ring(i) for i in range(1,L - 1)], dtype=object)
-    H_hop = np.array([Gate_hop(i) for i in range(1, L - 1)], dtype=object)
-    psi = np.repeat(get_initial_config_point(L, d), size, axis=0).reshape(size, 1, 3*L)
+    rng = np.random.default_rng()
+    H_ring = np.array([gate(i, False) for i in range(0, L - 1)], dtype=object)
+    H_hop = np.array([gate(i, True, False if i < L -2 else True) for i in range(0, L - 1)], dtype=object)
+    states = {state.tobytes() : 0 for state in load_data(L)["configs"]}
     
-    states = {psi.tobytes(): 1}
-    state_vars = [0]
-    for i in range(2, times):
-        promote_psi_classical(psi, H_ring, H_hop, prob)  
-            
-        if psi.tobytes() in states:
-            states[psi.tobytes()] += 1
-        else:
-            states[psi.tobytes()] = 1
-        var_i =  np.var(list(states.values()))
-        state_vars.append(np.sqrt(var_i)/i)
+    # print(H_ring)
+    # print(H_hop)
+    
+    psi = np.repeat(get_initial_config_point(L, d), size, axis=0)
+    all_psi = psi.copy()[None,:]
+    bin_count = [np.bincount(list(states.values()))]
+    rho = defect_density_point(psi).sum(0) / size
+    
+    state_vars = []
+    
+    for i in range(1, times):
+        for conf in psi:
+                states[conf.tobytes()] += 1
+        count = np.bincount(list(states.values()))
+        state_vars.append(np.std(count)/(i*size))
+
+        promote_psi_classical(psi, H_ring, H_hop, prob_ring)
+        # print(all_psi.shape)
+        # print(psi.shape)
+        all_psi = np.vstack((all_psi, psi[None,:]))
+        bin_count.append(count)
+        rho = np.vstack((rho, defect_density_point(psi).sum(0)/size))
+        
+        if test_charge:
+            charge = defect_density_point(psi)
+            charge_fail = np.argwhere(charge.sum(1) != 2)
+            if charge_fail.size > 0:
+                #print(psi[charge_fail])
+                print(i)
+                plot_conf(psi[charge_fail])
+                raise SystemExit("Charge is not conserved")
+        
         if i % interval == 0:
             display.clear_output(wait=True)
+            plt.subplot(3, 1, 1)
             plt.plot(state_vars)
+            plt.title("std_i/i*size")
             plt.annotate(str(state_vars[-1]), (i,state_vars[-1]))
+            
+            plt.subplot(3, 1, 2)
+            charge = defect_density_point(psi)
+            plt.plot(rho[-1, 1:])
+            plt.title("Charge distribution")
+            
+            plt.subplot(3, 1, 3)
+            plt.plot(count)
+            plt.title("bin count")
+            
+            plt.tight_layout()
             plt.show()
+    print(len(states))
+    return rho, all_psi, bin_count
         
         
 ###################
@@ -323,6 +540,7 @@ def load_configs(fn):
         print (dim,3*L)
 
         a=np.array(np.fromfile(fin, dtype=np.int8))
+
         fin.close()
         return np.reshape(a,(dim,3*L))
     else:

@@ -20,7 +20,7 @@ class Simulator:
     times: int
     d : int
     
-    batch : int
+    batch : int = 1
     gate : object = Gate2
     prob : int = 0.5
     
@@ -116,8 +116,8 @@ class Simulator:
         return analysis
     
     def classical_evolutions_batch_points(self, size):
-        H_ring = np.array([self.gate(i, False) for i in range(1, self.L - 1)], dtype=object)
-        H_hop = np.array([self.gate(i, True) for i in range(1, self.L - 1)], dtype=object)
+        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
+        H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
         psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0)
         
         
@@ -226,7 +226,14 @@ def get_experiment_args():
     parser = argparse.ArgumentParser(prog='Parallel execution of experiments and their analysis.', allow_abbrev=False)
     subparsers = parser.add_subparsers(help='Choose experiment', required=True, dest='experiment')
 
-    parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
+    parser_varying_batch_size = subparsers.add_parser('q', help='Quantum simulation', allow_abbrev=False)
+    
+        parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
+    parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
+    
+    parser_varying_batch_size.add_argument("--name", help="File prefix",
+                                           type=str, nargs='+', default='def')
     
     parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)

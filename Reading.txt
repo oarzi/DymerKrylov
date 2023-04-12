@@ -1,0 +1,24 @@
+Reviews:
+
+1. Quantum Dimer Models (Ch. 17 - Introduction to Frustrated Magnetism)
+Roderich Moessner, Kumar S. Raman
+
+2. FIELD THEORIES OF CONDENSED MATTER PHYSICS (Ch. 8 & 9)
+E. Fradkin
+
+Additional:
+
+3. Solution of the Dimer Problem by the Transfer Matrix Method
+Elliott H. Lieb
+
+4. Statistical Mechanics of Dimers on a Plane Lattice
+MICHAEL K. FISHER
+
+And - Statistical Mechanics of Dimers on a Plane Lattice. II. Dimer Correlations and Monomers
+MICHAEL E. FISHER, JOHN STEPHENSON
+
+
+5. Short-ranged resonating valence bond physics, quantum dimer models, and Ising gauge theories
+R. Moessner, S. L. Sondhi, Eduardo Fradkin
+
+Includes the height-field Hamiltonian from Michael's notes.
