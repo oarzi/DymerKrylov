@@ -1,6 +1,5 @@
 from scipy.optimize import curve_fit
 import pickle
-import dimers_sim
 from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
 import time
@@ -18,19 +17,22 @@ class Experiment:
     description : str = ''
     
     def save(self):
-        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
+        with open(self.dir_name + "/" +  self.file_name + ".pickle", 'wb') as f:
             pickle.dump(self, f)
+            print("Saved at {}".format(self.dir_name + "/" + self.file_name))
             
-def get_experiments_from_paths(paths, dir_path="analyses/varying_p/", file_name="varying_p_test", description="description" ):
+def get_experiments_from_paths(paths, dir_path, file_name, description="" ):
     exp_files = []
     for path in paths:
-        with open(dir_path+path, 'rb') as f:
+        with open(dir_path + "/" +path, 'rb') as f:
             _e = pickle.load(f)
             exp_files.append(_e)
-    experiment = dimers_sim.Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
-                                      "analyses/good",
-                                      [e.results[0] for e in exp_files],
+    experiment = Experiment(file_name=file_name,
+                                      dir_name="analyses/good",
+                                      results=[e.results[0] for e in exp_files],
                                       description=description)
+    
+    experiment.save()
     return experiment
 
 @dataclass

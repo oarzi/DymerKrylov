@@ -59,17 +59,14 @@ def get_sge_scripts(args):
             
             file_name = "temp_sge_files/sge" + str(name) + ".sge"
             with open(file_name, mode="w+", newline=os.linesep) as sge_script:
-                
                 name = "'cluster{}'".format(name)
-                if arg_parse.name[0] != 'def':
+                if arg_parse.name != 'def':
                     arg = arg.replace(arg_parse.name[0], arg_parse.name[0] + "_" + name)
                 else:
                     arg = arg + " --name " + name
-
                 print(parser.parse_args(arg.split()))
-
                 
-                pref = get_prefix(mem ,cores=cores, q='cond-mat-shortx  ')
+                pref = get_prefix(mem ,cores=cores, q='cond-mat-short')
                 outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
                                         o='outputs/analysis_output_{}.txt'.format(name))
                 multi = get_multi_proc(cores=cores)
@@ -123,12 +120,18 @@ if __name__ == '__main__':
         args_list = ["pgate --L 400 --d 30 --times 800 --batch 10000 --p {} --procs_sim 1 --batch_procs 80".format(_p) for _p in p_list]
 
     """
- 
+    
+    L_list = [300, 600, 1200, 2400]
+    args_list = ["ic --L {} --d 60 --times 200 --batch 800 --procs_sim 1 --batch_procs 30".format(_L) for _L in L_list]
+    main(args_list)
+    args_list = ["ic --L {} --d 60 --times 800 --batch 800 --procs_sim 1 --batch_procs 30".format(_L) for _L in L_list]
+    main(args_list)
+    
     p_list = [0.95, 0.75, 0.5, 0.35, 0.2, 0.15]
-    args_list = ["pgate --L 800 --d 60 --times 6000 --batch 1000 --p {} --procs_sim 1 --batch_procs 15 --name permutation".format(_p) for _p in p_list]
+    args_list = ["pgate --L 800 --d 60 --times 6000 --batch 750 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
     main(args_list)
     
     p_list = [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001]
-    args_list = ["pgate --L 800 --d 60 --times 6000 --batch 5000 --p {} --procs_sim 1 --batch_procs 15 --name permutation".format(_p) for _p in p_list]
+    args_list = ["pgate --L 800 --d 60 --times 6000 --batch 750 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
     main(args_list)
     
