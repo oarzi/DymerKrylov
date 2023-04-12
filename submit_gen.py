@@ -121,17 +121,8 @@ if __name__ == '__main__':
 
     """
     
-    L_list = [300, 600, 1200, 2400]
-    args_list = ["ic --L {} --d 60 --times 200 --batch 800 --procs_sim 1 --batch_procs 30".format(_L) for _L in L_list]
-    main(args_list)
-    args_list = ["ic --L {} --d 60 --times 800 --batch 800 --procs_sim 1 --batch_procs 30".format(_L) for _L in L_list]
-    main(args_list)
-    
-    p_list = [0.95, 0.75, 0.5, 0.35, 0.2, 0.15]
-    args_list = ["pgate --L 800 --d 60 --times 6000 --batch 750 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
-    main(args_list)
-    
-    p_list = [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001]
-    args_list = ["pgate --L 800 --d 60 --times 6000 --batch 750 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list]
+    times = [50, 200, 1000, 2000]
+    args_list = ["q --L 34 --d 26 --times {}".format(t) for t in times]
+
     main(args_list)
     
