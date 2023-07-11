@@ -94,77 +94,6 @@ def plot_conf(psi):
         # stripped = str(c).translate(str.maketrans({"[": "", "]": "", " ": "", "\n":""}))
         # print([stripped[i:i + 3] for i in range(0, len(stripped), 3)])
 
-
-class Gate3:
-    
-    def __init__(self, i, do_hop, max_i=False):
-        self.i = i
-        self.do_hop = do_hop 
-        self.max_i = max_i
-        self.ring_list = np.array([[1,0,0,1],
-                                   [0,1,1,0]])
-        if self.i == 0:
-            hop_list_up1 = np.array([[0,1,0,0,0,0,1], 
-                                     [0,1,0,0,0,1,0]], dtype=np.int32)
-
-            hop_list_up2 = np.array([[0,1,0,0,0,0,0]], dtype=np.int32)
-            
-            self.hop_list = [hop_list_up1, hop_list_up2]
-        elif self.max_i:
-            hop_list_up1 = np.array([[0,1,0,0,0,0], 
-                                     [0,0,0,1,0,0]], dtype=np.int32)
-
-            hop_list_down1 = np.array([[0,0,1,0,0,0], 
-                                       [0,0,0,1,0,0]], dtype=np.int32)
-
-            self.hop_list = [hop_list_up1, hop_list_down1]
-        else:
-            hop_list_up1 = np.array([[0,1,0,0,0,0,1], 
-                                     [0,0,0,1,0,0,1],
-                                     [0,1,0,0,0,1,0]], dtype=np.int32)
-
-            hop_list_up2 = np.array([[0,1,0,0,0,0,0], 
-                                     [0,0,0,1,0,0,0]], dtype=np.int32)
-
-            hop_list_down1 = np.array([[0,0,1,0,0,0,1], 
-                                       [0,0,1,0,1,0,0],
-                                       [0,0,0,1,0,0,1]], dtype=np.int32)
-
-            hop_list_down2 = np.array([[0,0,1,0,0,0,0], 
-                                       [0,0,0,1,0,0,0]], dtype=np.int32)
-            
-            self.hop_list = [hop_list_up1, hop_list_up2, hop_list_down1, hop_list_down2]
-        
-    def __call__(self, config):
-        return self.hop(config) if self.do_hop else self.ring(config)
-    
-    def ring(self, config):
-        idx, = np.where((config[:, 3*self.i:3*(self.i+1) + 1] == self.ring_list[:,None]).all(axis=-1).any(0))    
-        config[idx, 3*self.i:3*(self.i+1) + 1] = np.random.choice(self.ring_list, size=idx.size)
-        return config
-    
-    def hop(self, config):
-        pre = config.copy()
-        old = np.array(config[:, 3*self.i:3*(self.i+2) + (0 if self.max_i else 1)])
-        idx_list = [np.where(( old == hop_conf[0,None,None]).all(axis=-1).any(0))[0] for hop_conf in self.hop_list] 
-        
-        for idx, hop_conf in zip(idx_list, self.hop_list):
-            config[idx, 3*self.i:3*(self.i+2) + (0 if  self.max_i else 1)] = np.random.choice(hop_conf, size=idx.size)
-
-        charge = defect_density_point(config)
-#         charge_fail = np.argwhere(np.sum(charge, axis=1) != 2)
-#         if charge_fail.size > 0:
-#             print(self.i)
-#             print(charge_fail)
-
-#             plot_conf(pre[charge_fail])
-#             print(defect_density_point(pre)[charge_fail])
-#             plot_conf(config[charge_fail])
-#             print(charge[charge_fail])
-#             raise SystemExit("Charge is not conserved")
-        
-        return config 
-
 @dataclass
 class Gate2:
     i: int
@@ -248,7 +177,7 @@ def promote_psi_classical(psi, H_ring, H_hop, prob_ring):
 
         hops_i = np.nonzero(np.logical_not(row_gate))
         psi[hops_i] = H_hop[i](psi[hops_i])
-
+        
     return psi
 
     
@@ -257,9 +186,10 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
     
     H_ring = np.array([gate(i, False) for i in range(0, L - 1)], dtype=object)
     H_hop = np.array([gate(i, True, False if i < L -2 else True) for i in range(0, L - 1)], dtype=object)
-    states = {state.tobytes() : 0 for state in load_configs('matrices/basis_L{}.dat'.format(L))}
 
+    states = {state.tobytes() : 0 for state in load_configs('matrices/basis_L{}.dat'.format(L))}
     psi = get_initial_config_point(L, d, size)
+
     state_vars = []
     
     for i in range(1, times):
@@ -268,8 +198,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
         count = np.bincount(list(states.values()))
         state_vars.append(np.std(count)/(i*size))
 
-        promote_psi_classical(psi, H_ring, H_hop, prob_ring)
-
+        psi = promote_psi_classical(psi, H_ring, H_hop, prob_ring)
         rho = np.mean(defect_density_point(psi), axis=0)
         
         if i % interval == 0:
@@ -291,6 +220,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
             plt.tight_layout()
             plt.show()
     print(len(states))
+
     return
 
 def load_configs(fn):

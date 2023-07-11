@@ -23,6 +23,7 @@ class Simulator:
     batch : int = 1
     gate : object = Gate2
     prob : int = 0.5
+    check_interval: int = 100
     
     
     file_name : str = ""
@@ -93,17 +94,30 @@ class Simulator:
     
     
     def simulate(self):
+        print(sys.version)
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
         with Pool(self.batch_procs_num) as p:
-            c_rhos =  p.map(self.classical_evolutions_batch_points, (self.batch for i in range(self.batch_procs_num)), chunksize=1)
-            p.close()
-            p.join()
+            c_rhos = p.map(self.classical_evolutions_batch_points, 
+                           [self.batch for i in range(self.batch_procs_num)])
+            rhos, psis = [res[0] for res in c_rhos], [res[1] for res in c_rhos]
         
-        rho = np.array(c_rhos)
-        print("before batch sum", rho.shape)
-        rho = np.sum(rho, axis=0)/(self.batch*self.batch_procs_num)
-        print("after batch sum", rho.shape)
+        for i in range(self.check_interval - 1):
+            with Pool(self.batch_procs_num) as p:
+                c_rhos = p.starmap(self.classical_evolutions_batch_points, 
+                               [(self.batch, psis[i]) for i in range(self.batch_procs_num)])
+                rhos, psis = [res[0] for res in c_rhos], [res[1] for res in c_rhos]
+
+                print("before batch sum ({},{})".format(len(c_rhos), rhos[0].shape))
+                print("psi shape".format(psis[0].shape))
+                rho = sum(rhos)/self.batch_procs_num
+
+                print("after batch sum", rho.shape)
+
+                analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
+
+                with open(self.dir_name + self.file_name +str(time.time_ns()) + ".pickle", 'wb') as f:
+                    pickle.dump((analysis, psis), f)
 
         analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
         
@@ -115,28 +129,56 @@ class Simulator:
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return analysis
     
-    def classical_evolutions_batch_points(self, size):
-        H_ring = np.array([self.gate(i, False) for i in range(0, L - 1)], dtype=object)
+    def classical_evolutions_batch_points(self, size, psi = None):
+        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
         H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
         
-        psi = get_initial_config_point(self.L, self.d, size)
+        if not isinstance(psi, np.ndarray):
+            psi = get_initial_config_point(self.L, self.d, size)
         
         charge = defect_density_point(psi)
-        rho = np.sum(charge, axis=0)
-        pb = self.progress_bar(range(self.times))
-        for i in pb:
+        rho = np.mean(charge, axis=0)
+        for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             
-            
-            psi, charge = promote_psi_classical(psi, H_hop, self.prob, self.gate)  
-            
-            rho = np.vstack((rho, np.sum(charge, axis=0)))
+            psi = promote_psi_classical(psi, H_ring, H_hop, self.prob)
+            charge = defect_density_point(psi)
+            rho = np.vstack((rho, np.mean(charge, axis=0)))
 
         #if not self.local:
         print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
-        return rho
+        return rho, psi
+
+    def checkpoint(self, semas, sema_checkpoint, queue):
+        for sema in semas:
+            sema.acquire()
+        sema_checkpoint.acquire()
+        
+        print("here")
+        
+        rhos = []
+        psis = []
+        if not queue.empty():
+            while not queue.empty():
+                res = queue.get()
+                psis.append(res[0])
+                rhos.append(res[1])
+
+            rho = sum(rhos)/self.batch_procs_num
+
+            analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = 
+                                self.file_name, dir_name=self.dir_name)
+
+            with open(self.dir_name + self.file_name +str(time.time_ns()) + ".pickle", 'wb') as f:
+                pickle.dump((analysis, psis), f)
+        
+        for sema in semas:
+            sema.release()
+        print(len(semas))
+        sema_checkpoint.release(n=len(semas))
+        return
     
 
     def quantum_evolutions_batch_points(self, dt=0.5):
@@ -280,24 +322,24 @@ def get_experiment_args():
     parser_varying_initial_conditions.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='def')
     
-    parser_varying_initial_conditions = subparsers.add_parser('pgate', help='Varying gate probabilities',
+    parser_varying_prob = subparsers.add_parser('pgate', help='Varying gate probabilities',
                                                               allow_abbrev=False)
     
-    parser_varying_initial_conditions.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
-    parser_varying_initial_conditions.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
+    parser_varying_prob.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_prob.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
                                                    required=True)
-    parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
+    parser_varying_prob.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
                                                    required=True)
     
-    parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+    parser_varying_probadd_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
                                                    required=True)
-    parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
+    parser_varying_prob.add_argument("--batch", help="Number of trajectories over which path is averaged.",
                                                    type=int, nargs=1, required=True)
-    parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
+    parser_varying_prob.add_argument("--procs_sim", help="Number of simultaneously running experiments",
                                                    type=int, nargs=1, default=1)
-    parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
+    parser_varying_prob.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
     
-    parser_varying_initial_conditions.add_argument("--name", help="File prefix",
+    parser_varying_prob.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='def')
 
     return parser
