@@ -116,10 +116,10 @@ class Simulator:
         return analysis
     
     def classical_evolutions_batch_points(self, size):
-        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
+        H_ring = np.array([self.gate(i, False) for i in range(0, L - 1)], dtype=object)
         H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
-        psi = np.repeat(get_initial_config_point(self.L, self.d), size, axis=0)
         
+        psi = get_initial_config_point(self.L, self.d, size)
         
         charge = defect_density_point(psi)
         rho = np.sum(charge, axis=0)
@@ -127,10 +127,10 @@ class Simulator:
         for i in pb:
             if not self.local and (i % (self.times//25) == 0):
                 print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-                
-            promote_psi_classical(psi, H_ring, H_hop, self.prob)  
-
-            charge = defect_density_point(psi)
+            
+            
+            psi, charge = promote_psi_classical(psi, H_hop, self.prob, self.gate)  
+            
             rho = np.vstack((rho, np.sum(charge, axis=0)))
 
         #if not self.local:
@@ -148,6 +148,8 @@ class Simulator:
         rho = np.array([defect_density_points_quantum(configs,psi)])
 
         for i in  self.progress_bar(range(self.times)):
+            if not self.local and (i % (self.times//25) == 0):
+                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             psi = expm_multiply(-1j*(self.prob*H_ring + (1 - self.prob)*H_hop)*dt,psi)
             rho = np.vstack((rho, defect_density_points_quantum(configs,psi)))
 
@@ -226,11 +228,29 @@ def get_experiment_args():
     parser = argparse.ArgumentParser(prog='Parallel execution of experiments and their analysis.', allow_abbrev=False)
     subparsers = parser.add_subparsers(help='Choose experiment', required=True, dest='experiment')
 
+    parser_quantum = subparsers.add_parser('q', help='Quantum simulation', allow_abbrev=False)
+    
+    parser_quantum.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_quantum.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
+    parser_quantum.add_argument("--batch", help="Number of trajectories over which path is averaged.", type=int,
+                                           nargs='+', required=False, default=[1])
+    parser_quantum.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+', default=[0.5])
+    parser_quantum.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
+
+    parser_quantum.add_argument("--name", help="File prefix",
+                                           type=str, nargs='+', default='def')
+    parser_quantum.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int, required=False,
+                                           nargs=1, default=[1])
+    parser_quantum.add_argument("--batch_procs", help="Number of processes per single running experiment",
+                                           type=int, nargs='+', default=[1])
+    
+    
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
     
     parser_varying_batch_size.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_varying_batch_size.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
     parser_varying_batch_size.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
+    
     parser_varying_batch_size.add_argument("--batch", help="Number of trajectories over which path is averaged.", type=int,
                                            nargs='+', required=True)
     parser_varying_batch_size.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int,
@@ -249,6 +269,8 @@ def get_experiment_args():
                                                    required=True)
     parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs='+',
                                                    required=True)
+    parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+                                                   required=True, default=[0.5])
     parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
                                                    type=int, nargs=1, required=True)
     parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",

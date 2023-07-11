@@ -101,6 +101,41 @@ def dist_fit(ana, fit, t, p0=None):
     #  "Width = {}".format(popt[1]))
     return popt, pcov, x_max, x_min
 
+def plot_dist_scaled(ana, velocity, times, x_max, D=1):
+    f, ax = plt.subplots(1, 1, figsize=(12,8))
+    rho = ana.rho
+    ana_times = (ana.times*times).astype(np.int32)
+    xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
+
+    x_min = 1
+    for i,t in enumerate(ana_times):
+        d = D if isinstance(D, numbers.Number) else D[i]
+        scaled_x = (xrange-velocity*t)/np.sqrt(d*t)
+        ax.plot(scaled_x, np.sqrt(d*t)*rho[t, x_min : x_max], label='t_{}={}'.format(i, t/ana.times))
+
+    plt.title(r'$x \rightarrow \frac{x-vt}{\sqrt{t}}$' + ', p={}'.format(ana.p), fontsize='large')
+    plt.legend()
+    plt.show()
+
+def fit_scaled_dist(ana, velocity, t_fit, x_max):
+    xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
+    t_fit = int(ana.times*t_fit)
+    x_min = 1
+    scaled_x = (xrange-velocity*t)/np.sqrt(t_fit)
+
+    popt, pcov = curve_fit(dimers_analysis.gaussian, scaled_x, np.sqrt(t_fit)*ana.rho[t_fit, x_min : x_max], bounds = ([-5,0],[5,5]), p0=[1,1])
+    return popt[1]
+
+
+def fit_velocity(t, a, b):
+    return  a*t +b
+def extract_velocity(ana ,t_min, t_max):
+    
+    bound_low = [100*(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max])), ana.analysis['Mean'][t_min]/10 ]
+    bound_up = [0, ana.analysis['Mean'][t_min]*10]
+
+    popt, pcov = curve_fit(fit, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max], bounds=(bound_low, bound_up),p0=(-0.5, ana.analysis['Mean'][t_min]))
+    return popt, pcov
 
 
 def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False):
