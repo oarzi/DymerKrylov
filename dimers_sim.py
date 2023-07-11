@@ -100,9 +100,9 @@ class Simulator:
             p.close()
             p.join()
         
-        rho = np.array(c_rhos)
-        print("before batch sum", rho.shape)
-        rho = np.sum(rho, axis=0)/(self.batch*self.batch_procs_num)
+        print("before batch sum ({},{})".format(len(c_rhos, c_rhos[0].shape)))
+        rho = sum(c_rhos)
+
         print("after batch sum", rho.shape)
 
         analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
