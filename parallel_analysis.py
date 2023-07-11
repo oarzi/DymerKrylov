@@ -94,9 +94,13 @@ def varying_gate_probabilities(args):
     
     print("batch_procs_num={}".format(batch_procs_num))
     
-    simulators = [dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, d=d_sim, prob=p, batch=batch_size, batch_procs_num = batch_procs_num, dir_name=dir_name) for p in p_gate]
+    #simulators = [dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, d=d_sim, prob=p, batch=batch_size, batch_procs_num = batch_procs_num, dir_name=dir_name) for p in p_gate]
     
-    results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
+    #results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
+    
+    simulator = dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, d=d_sim, prob=p_gate[0], batch=batch_size, batch_procs_num = batch_procs_num, dir_name=dir_name)
+  
+    results = [simulator.simulate()] 
 
     
     experiment = dimers_analysis.Experiment(file_name +  time.strftime("%Y_%m_%d__%H_%M"),

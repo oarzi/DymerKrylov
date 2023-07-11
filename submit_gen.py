@@ -14,6 +14,7 @@ def get_prefix(mem, cores=1, q='cond-mat', wd_path=''):
         
     prefix = """#!/bin/bash\n
 #$ -S /bin/bash
+#$ -l h_vmem=6g
 #$ -{} 
 #$ -M ofir.arzi@tum.de
 #$ -m ea  
@@ -55,7 +56,7 @@ def get_sge_scripts(args):
         arg_parse = parser.parse_args(arg.split())
         print(arg_parse)
         mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
-        cores = 2 + sum([p*b for p,b in zip(arg_parse.procs_sim, arg_parse.batch_procs)])
+        cores = 1 + sum([p*b for p,b in zip(arg_parse.procs_sim, arg_parse.batch_procs)])
         while True:
             name = np.random.randint(1000,10000)
             
@@ -96,8 +97,8 @@ def main(args_list, chdir_path = "", wd_path=''):
 
     sge_files = get_sge_scripts(args_list)
 
-    for sge_file in sge_files:
-        print(sge_file)
+    for job, sge_file in enumerate(sge_files):
+        print("Job {}/{}: ".format(job, len(sge_files)) + sge_file)
         os.system("chmod u+x {}".format(sge_file))
         os.system("qsub {}".format(sge_file))
         
@@ -127,19 +128,8 @@ if __name__ == '__main__':
 
     """
     
-    p_list = [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001, 0.12, 0.13, 0.15, 0.2, 0.35, 0.5, 0.75, 0.95]
-    d_list800 = [200, 400, 600]
-    args_list = ["pgate --L 800 --d {} --times {} --batch 4000 --p {} --procs_sim 1 --batch_procs 8".format(_d, (_d//60)*10000 , _p) for _d, _p in product(d_list800, p_list)]
-    
-    d_list3000 = [200, 400, 600, 750, 1500, 2250]
-    args_list = args_list + ["pgate --L 3000 --d {} --times {} --batch 4000 --p {} --procs_sim 1 --batch_procs 8".format(_d, (_d//60)*10000 , _p) for _d, _p in product(d_list3000, p_list)]
-    
-    d_list6000 = [200, 400, 600, 750, 1500, 2250, 3000, 4500]
-    args_list = args_list + ["pgate --L 6000 --d {} --times {} --batch 4000 --p {} --procs_sim 1 --batch_procs 8".format(_d, (_d//60)*10000 , _p) for _d, _p in product(d_list6000, p_list)]
-    
-    d_list10000 = [200, 400, 600, 750, 1500, 2500, 5000, 7500]
-    args_list = args_list + ["pgate --L 10000 --d {} --times {} --batch 4000 --p {} --procs_sim 1 --batch_procs 8".format(_d, (_d//60)*10000 , _p) for _d, _p in product(d_list10000, p_list)]
-    
-    
+    p_list1 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    args_list = ["pgate --L 800 --d 600 --times 120000 --batch 2000 --p {} --procs_sim 1 --batch_procs 12".format(_p) for _p in p_list1]
     main(args_list)
+    
     

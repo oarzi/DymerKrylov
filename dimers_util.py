@@ -230,7 +230,7 @@ class Gate2:
     
     def hop(self, config):
         # print(config)
-        pre = config.copy()
+#         pre = config.copy()
         old = np.array(config[:, 3*self.i:3*(self.i+2) + (0 if self.max_i else 1)])
         idx_list = [np.where(( old == hop_conf[0,None,None]).all(axis=-1).any(0))[0] for hop_conf in self.hop_list] 
         
@@ -244,21 +244,21 @@ class Gate2:
         for idx, hop_conf in zip(idx_list, self.hop_list):
             config[idx, 3*self.i:3*(self.i+2) + (0 if  self.max_i else 1)] = self.rng.choice(hop_conf, size=idx.size)
 
-        charge = defect_density_point(config)
-        charge_fail = np.argwhere(np.sum(charge, axis=1) != 2)
-        if charge_fail.size > 0:
-            print(self.i)
-            print(charge_fail)
+#         charge = defect_density_point(config)
+#         charge_fail = np.argwhere(np.sum(charge, axis=1) != 2)
+#         if charge_fail.size > 0:
+#             print(self.i)
+#             print(charge_fail)
 
-            # print(idx_up1)
-            # print(idx_up2)
-            # print(idx_down1)
-            # print(idx_down2)
-            plot_conf(pre[charge_fail])
-            print(defect_density_point(pre)[charge_fail])
-            plot_conf(config[charge_fail])
-            print(charge[charge_fail])
-            raise SystemExit("Charge is not conserved")
+#             # print(idx_up1)
+#             # print(idx_up2)
+#             # print(idx_down1)
+#             # print(idx_down2)
+#             plot_conf(pre[charge_fail])
+#             print(defect_density_point(pre)[charge_fail])
+#             plot_conf(config[charge_fail])
+#             print(charge[charge_fail])
+#             raise SystemExit("Charge is not conserved")
         
         # print(config)
         return config    
@@ -424,33 +424,18 @@ def plot_conf(psi):
 
 def promote_psi_classical(psi, H_ring, H_hop, prob_ring):
     rng = np.random.default_rng()
-
     shift = rng.choice([0, 1, 2], 1)
-    # indices = shift + np.arange(0, psi.shape[1]//3-1, 3)
     indices = np.arange(shift + 0, psi.shape[1]//3-1, 3)
     rng.shuffle(indices)
-    # print(indices)
     gates_i = rng.choice([True, False], size=(psi.shape[0], indices.size), p =[prob_ring, 1 - prob_ring])
-    # print(gates_i)
-    # for psi_i, (idx, row_gate) in enumerate(zip(indices, gates_i)):
-    #     for i, gate in zip(idx, row_gate):
-    #         if i < psi.shape[1]//3-1:
-    #             # print(psi[psi_i])
-    #             psi[psi_i] = H_ring[i](psi[psi_i, None]) if gate else H_hop[i](psi[psi_i, None])
-    #             # print(psi[psi_i])
                 
-
     for i,row_gate in zip(indices, gates_i.T):
-        rings_i = np.argwhere(row_gate)
-        if rings_i.size > 0:
-            rings_i = rings_i.reshape(rings_i.size)
-            psi[rings_i] =  H_ring[i](psi[rings_i])
-            # psi[rings_i] =  ring2(i, psi[rings_i], rng)
-        hops_i = np.argwhere(np.logical_not(row_gate))
-        if hops_i.size > 0:
-            hops_i = hops_i.reshape(hops_i.size)
-            psi[hops_i] = H_hop[i](psi[hops_i])
-            # psi[hops_i] = hop2(i, psi[hops_i], rng)
+        rings_i = np.nonzero(row_gate)
+        psi[rings_i] =  H_ring[i](psi[rings_i])
+        
+        hops_i = np.nonzero(np.logical_not(row_gate))
+        psi[hops_i] = H_hop[i](psi[hops_i])
+        
     return psi
 
     
@@ -462,13 +447,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
     H_hop = np.array([gate(i, True, False if i < L -2 else True) for i in range(0, L - 1)], dtype=object)
     states = {state.tobytes() : 0 for state in load_data(L)["configs"]}
     
-    # print(H_ring)
-    # print(H_hop)
-    
     psi = np.repeat(get_initial_config_point(L, d), size, axis=0)
-    all_psi = psi.copy()[None,:]
-    bin_count = [np.bincount(list(states.values()))]
-    rho = defect_density_point(psi).sum(0) / size
     
     state_vars = []
     
@@ -479,20 +458,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
         state_vars.append(np.std(count)/(i*size))
 
         promote_psi_classical(psi, H_ring, H_hop, prob_ring)
-        # print(all_psi.shape)
-        # print(psi.shape)
-        all_psi = np.vstack((all_psi, psi[None,:]))
-        bin_count.append(count)
-        rho = np.vstack((rho, defect_density_point(psi).sum(0)/size))
-        
-        if test_charge:
-            charge = defect_density_point(psi)
-            charge_fail = np.argwhere(charge.sum(1) != 2)
-            if charge_fail.size > 0:
-                #print(psi[charge_fail])
-                print(i)
-                plot_conf(psi[charge_fail])
-                raise SystemExit("Charge is not conserved")
+        rho = np.mean(defect_density_point(psi), axis=0)
         
         if i % interval == 0:
             display.clear_output(wait=True)
@@ -503,7 +469,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
             
             plt.subplot(3, 1, 2)
             charge = defect_density_point(psi)
-            plt.plot(rho[-1, 1:])
+            plt.plot(rho[1:])
             plt.title("Charge distribution")
             
             plt.subplot(3, 1, 3)
@@ -513,7 +479,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
             plt.tight_layout()
             plt.show()
     print(len(states))
-    return rho, all_psi, bin_count
+    return rho
         
         
 ###################
