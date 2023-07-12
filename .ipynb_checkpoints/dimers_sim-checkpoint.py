@@ -111,19 +111,21 @@ class Simulator:
     def simulate(self):
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
+        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
+        H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
+        
         rho, psis = self.initialize()
 
         for i in range(self.check_interval):
             with Pool(self.batch_procs_num) as p:
                 c_rhos = p.starmap(self.classical_evolutions_batch_points, 
-                               [(psis[i], rho[-1]) for i in range(self.batch_procs_num)])
+                               [(psis[i], rho[-1], H_ring, H_hop) for i in range(self.batch_procs_num)])
                 rhos, psis = [res[0] for res in c_rhos], [res[1] for res in c_rhos]
 
                 print("before batch sum ({},{})".format(len(c_rhos), rhos[0].shape))
                 print("psi shape {}".format(psis[0].shape))
-                rho_i = sum(rhos)/self.batch_procs_num
                 
-                rho = np.vstack((rho, rho_i))
+                rho = np.vstack((rho, np.mean(rhos, axis=0)))
 
                 print("after batch sum", rho.shape)
 
@@ -136,9 +138,7 @@ class Simulator:
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return analysis
     
-    def classical_evolutions_batch_points(self, psi, rho):
-        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
-        H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
+    def classical_evolutions_batch_points(self, psi, rho, H_ring, H_hop):
         
         for i in self.progress_bar(range(self.times)):
             if not self.local and (i % (self.times//25) == 0):
