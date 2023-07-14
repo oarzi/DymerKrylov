@@ -278,24 +278,24 @@ def get_experiment_args():
     parser_varying_initial_conditions.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='def')
     
-    parser_varying_initial_conditions = subparsers.add_parser('pgate', help='Varying gate probabilities',
+    parser_varying_prob = subparsers.add_parser('pgate', help='Varying gate probabilities',
                                                               allow_abbrev=False)
     
-    parser_varying_initial_conditions.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
-    parser_varying_initial_conditions.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
+    parser_varying_prob.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
+    parser_varying_probadd_argument("--times", help="Number of time steps.", type=int, nargs=1,
                                                    required=True)
-    parser_varying_initial_conditions.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
+    parser_varying_prob.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
                                                    required=True)
     
-    parser_varying_initial_conditions.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
+    parser_varying_prob.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+',
                                                    required=True)
-    parser_varying_initial_conditions.add_argument("--batch", help="Number of trajectories over which path is averaged.",
+    parser_varying_prob.add_argument("--batch", help="Number of trajectories over which path is averaged.",
                                                    type=int, nargs=1, required=True)
-    parser_varying_initial_conditions.add_argument("--procs_sim", help="Number of simultaneously running experiments",
+    parser_varying_prob.add_argument("--procs_sim", help="Number of simultaneously running experiments",
                                                    type=int, nargs=1, default=1)
-    parser_varying_initial_conditions.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
+    parser_varying_prob.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
     
-    parser_varying_initial_conditions.add_argument("--name", help="File prefix",
+    parser_varying_prob.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='def')
 
     return parser

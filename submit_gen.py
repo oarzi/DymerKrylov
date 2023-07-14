@@ -14,7 +14,7 @@ def get_prefix(mem, cores=1, q='cond-mat', wd_path=''):
         
     prefix = """#!/bin/bash\n
 #$ -S /bin/bash
-#$ -l h_vmem=6g
+#$ -l h_rss=6g
 #$ -{} 
 #$ -M ofir.arzi@tum.de
 #$ -m ea  
@@ -129,7 +129,10 @@ if __name__ == '__main__':
     """
     
     p_list1 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
-    args_list = ["pgate --L 800 --d 600 --times 120000 --batch 2000 --p {} --procs_sim 1 --batch_procs 12".format(_p) for _p in p_list1]
-    main(args_list)
-    
-    
+    args_list1 = ["pgate --L 800 --d 600 --times 120000 --batch 2000 --p {} --procs_sim 1 --batch_procs 12".format(_p) for _p in p_list1]
+    main(args_list1)
+
+
+    p_list2 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    args_list2 = ["pgate --L 400 --d 300 --times 120000 --batch 2000 --p {} --procs_sim 1 --batch_procs 12".format(_p) for _p in p_list2]
+    main(args_list2)
