@@ -24,7 +24,7 @@ def quantum(args):
                                       description='quantum experiment for L={}, times={}, d={}'.format(L_sim, times_sim, d_sim))
     
     experiment.save() 
-    dimers_analysis.plot_analyses([results],label = 'd', title=title, save=True, name = dir_name + file_name  + 
+    dimers_analysis.plot_analyses([results],label = 'd', title=title, name = dir_name + file_name  + 
                              time.strftime("%Y_%m_%d__%H_%M"))
 
 def varying_batch_size(args):
@@ -51,7 +51,7 @@ def varying_batch_size(args):
                                       description='Varying batch size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
-    dimers_analysis.plot_analyses(results,label = 'batch', title=title, save=True, name = dir_name + file_name  + 
+    dimers_analysis.plot_analyses(results,label = 'batch', title=title, name = dir_name + file_name  + 
                              time.strftime("%Y_%m_%d__%H_%M"))
     
 def varying_initial_conditions(args):
@@ -62,7 +62,7 @@ def varying_initial_conditions(args):
 
     dir_name = "varying_initial_conditions/"
 
-    file_name = name[0] + '_ic_experiment_L{}_t{}_d{})_b{}___'.format(L_sim, times_sim, d_sim, batch_size)
+    file_name = name[0] + '_ic_experiment_L{}_t{}_d{}_b{}___'.format(L_sim, times_sim, d_sim, batch_size)
 
     title = "Evolution for initial position - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
@@ -79,7 +79,7 @@ def varying_initial_conditions(args):
                                       description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
-    dimers_analysis.plot_analyses(results, label = 'd', title=title, save=True, name = dir_name + file_name + 
+    dimers_analysis.plot_analyses(results, label = 'd', title=title, name = dir_name + file_name + 
                              time.strftime("%Y_%m_%d__%H_%M"))
     
 def varying_gate_probabilities(args):
@@ -88,15 +88,11 @@ def varying_gate_probabilities(args):
 
     dir_name = "varying_p/"
 
-    file_name = name[0] + '_ic_experiment_L{}_t{}_d{}_p{}____'.format(L_sim, times_sim, d_sim,p_gate)
+    file_name = name[0] + 'pgate_experiment_L{}_d{}_p{}____'.format(L_sim, times_sim, d_sim,p_gate)
 
     title = "Evolution for initial position - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
     print("batch_procs_num={}".format(batch_procs_num))
-    
-    #simulators = [dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, d=d_sim, prob=p, batch=batch_size, batch_procs_num = batch_procs_num, dir_name=dir_name) for p in p_gate]
-    
-    #results =  dimers_sim.Simulator.simulate_parallel(simulators, procs_sim)
     
     simulator = dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, d=d_sim, prob=p_gate[0], batch=batch_size, batch_procs_num = batch_procs_num, dir_name=dir_name)
   
@@ -109,7 +105,7 @@ def varying_gate_probabilities(args):
                                       description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
-    dimers_analysis.plot_analyses(results, label = 'd', title=title, save=True, name = dir_name + file_name + 
+    dimers_analysis.plot_analyses(results, label = 'd', title=title, name = dir_name + file_name + 
                              time.strftime("%Y_%m_%d__%H_%M"))
 
                          

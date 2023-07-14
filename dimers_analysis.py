@@ -44,6 +44,7 @@ class Analysis:
     batch : int
     p : float
     rho : np.ndarray
+    psis : list
     file_name : str
     dir_name : str
     analysis: dict = field(default_factory=dict, init=False)

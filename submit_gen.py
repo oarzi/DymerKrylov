@@ -63,10 +63,7 @@ def get_sge_scripts(args):
             file_name = "temp_sge_files/sge" + str(name) + ".sge"
             with open(file_name, mode="w+", newline=os.linesep) as sge_script:
                 name = "'cluster{}'".format(name)
-                if arg_parse.name != 'def':
-                    arg = arg.replace(arg_parse.name[0], arg_parse.name[0] + "_" + name)
-                else:
-                    arg = arg + " --name " + name
+                arg = arg.replace(arg_parse.name[0], arg_parse.name[0] + "_" + name)
                 print(parser.parse_args(arg.split()))
                 
                 pref = get_prefix(mem ,cores=cores, q='cond-mat')
