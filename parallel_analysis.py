@@ -2,6 +2,7 @@ import dimers_sim
 import dimers_analysis
 import time
 import sys
+import os
 
 def quantum(args):
     print("--- ===   Quantum simulation   === ---")
@@ -86,9 +87,9 @@ def varying_gate_probabilities(args):
     print("--- ===   varying_gate_probabilities   === ---")
     L_sim, times_sim, check, d_sim, p_gate, batch_size, procs_sim, batch_procs_num, name = args.L[0], args.times[0], args.check[0], args.d[0], args.p, args.batch[0], args.procs_sim[0], args.batch_procs[0], args.name
 
-    dir_name = "varying_p/"
+    dir_name = "varying_p/L_{}_d{}/".format(L_sim, d_sim)
 
-    file_name = name + '_experiment_L{}_d{}_p{}____'.format(L_sim, d_sim,p_gate)
+    file_name = name + '_experiment_L{}_d{}_p{}'.format(L_sim, d_sim,p_gate[0])
 
     title = "Evolution for initial position - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
@@ -99,14 +100,14 @@ def varying_gate_probabilities(args):
     results = [simulator.simulate()] 
 
     
-    experiment = dimers_analysis.Experiment(file_name +  time.strftime("%Y_%m_%d__%H_%M"),
+    experiment = dimers_analysis.Experiment(file_name,
                                       "analyses/" + dir_name,
                                       results,
                                       description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
     experiment.save() 
     dimers_analysis.plot_analyses(results, label = 'd', title=title, name = dir_name + file_name + 
-                             time.strftime("%Y_%m_%d__%H_%M"))
+                             time.strftime("%Y_%m_%d__%H_%M"), save=True)
 
                          
 if __name__ == '__main__':
@@ -115,6 +116,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args)
     Experiments = {'bs' : varying_batch_size, "ic" : varying_initial_conditions, 'pgate' : varying_gate_probabilities, 'q' : quantum}
+    try:
+        os.mkdir("analyses/varying_p/L_{}_d{}/".format(args.L[0], args.d[0]))
+    except:
+        print("Folder exists")
+    try:
+        os.mkdir("figs/varying_p/L_{}_d{}/".format(args.L[0], args.d[0]))
+    except:
+        print("Folder exists")
+
     experiment_execute = Experiments[args.experiment]
     experiment_execute(args)
 
