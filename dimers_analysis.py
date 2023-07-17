@@ -21,9 +21,9 @@ class Experiment:
             pickle.dump(self, f)
             print("Saved at {}".format(self.dir_name + "/" + self.file_name))
             
-def get_experiments_from_paths(paths, dir_path, file_name, description="" ):
+def get_experiments_from_paths(dir_path, file_name, description="" ):
     exp_files = []
-    for path in paths:
+    for path in os.listdir(dir_path):
         try:
             with open(dir_path + "/" +path, 'rb') as f:
                 _e = pickle.load(f)

@@ -135,6 +135,7 @@ class Simulator:
                 analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho,
                                     psis=psis, file_name = self.file_name, dir_name=self.dir_name)
                 analysis.save()
+                p.close()
             
         print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L, self.times, 
                                                                                         self.d, self.batch, 
