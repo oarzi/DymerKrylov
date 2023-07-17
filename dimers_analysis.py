@@ -24,13 +24,16 @@ class Experiment:
 def get_experiments_from_paths(paths, dir_path, file_name, description="" ):
     exp_files = []
     for path in paths:
-        with open(dir_path + "/" +path, 'rb') as f:
-            _e = pickle.load(f)
-            exp_files.append(_e)
+        try:
+            with open(dir_path + "/" +path, 'rb') as f:
+                _e = pickle.load(f)
+                exp_files.append(_e)
+        except:
+            print("Failed: " + dir_path + "/" +path)
 
-    experiment = Experiment(file_name + time.strftime("%Y_%m_%d__%H_%M"),
+    experiment = Experiment(file_name +"_" + time.strftime("%Y_%m_%d__%H_%M"),
                                       "analyses/good",
-                                      [e.results[0] for e in exp_files],
+                                      [e for e in exp_files],
                                       description=description)
     
     experiment.save()
