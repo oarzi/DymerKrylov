@@ -112,14 +112,17 @@ class Simulator:
         print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
         
         H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
-        H_hop = np.array([self.gate(i, True, False if i < self.L -2 else True)  for i in range(0, self.L - 1)], dtype=object)
+        H_hop = np.array([self.gate(i, True, False if i < (self.L - 2) else True)  for i in range(0, self.L - 1)], dtype=object)
         
         rho, psis = self.initialize()
 
         for i in range(self.check_interval):
+            if not self.local and (i % (self.check_interval//25) == 0):
+                print("======================================================================================")
+                print("{} is {}% completed".format(os.getpid(), 100*i/self.times), flush=True)
             with Pool(self.batch_procs_num) as p:
                 c_rhos = p.starmap(self.classical_evolutions_batch_points, 
-                               [(psis[i], rho[-1], H_ring, H_hop) for i in range(self.batch_procs_num)])
+                               [(psi, rho[-1], H_ring, H_hop) for psi in psis])
                 rhos, psis = [res[0] for res in c_rhos], [res[1] for res in c_rhos]
 
                 print("before batch sum ({},{})".format(len(c_rhos), rhos[0].shape))
@@ -141,14 +144,14 @@ class Simulator:
     def classical_evolutions_batch_points(self, psi, rho, H_ring, H_hop):
         
         for i in self.progress_bar(range(self.times)):
-            if not self.local and (i % (self.times//25) == 0):
-                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
+            #if not self.local and (i % (self.times//25) == 0):
+            #   print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
             
             psi = promote_psi_classical(psi, H_ring, H_hop, self.prob)
             charge = defect_density_point(psi)
             rho = np.vstack((rho, np.mean(charge, axis=0)))
 
-        print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
+        #print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
 
         return rho[1:], psi
     
@@ -298,7 +301,10 @@ def get_experiment_args():
     
     parser_varying_prob.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
 
-    parser_varying_prob.add_argument("--times", help="Number of time steps.", type=int, nargs=1,
+    parser_varying_prob.add_argument("--times", help="Number of time steps per interval.", type=int, nargs=1,
+                                                   required=True)
+                                                   
+    parser_varying_prob.add_argument("--check", help="Number interval checkpoints", type=int, nargs=1,
                                                    required=True)
                                                    
     parser_varying_prob.add_argument("--d", help="Defect's inital location.", type=int, nargs=1,
@@ -314,6 +320,6 @@ def get_experiment_args():
     parser_varying_prob.add_argument("--batch_procs", help="Number of processes per single running experiment", type=int, nargs='+', default=1)
     
     parser_varying_prob.add_argument("--name", help="File prefix",
-                                           type=str, nargs='+', default='pgate')
+                                           type=str, nargs='+', default='pgate_')
 
     return parser

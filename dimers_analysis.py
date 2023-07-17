@@ -62,7 +62,7 @@ class Analysis:
             return pickle.load(f)
 
     def analyze(self):
-        print("Analysis start")
+        #print("Analysis start")
         self.analysis['d'] = self.d
         self.analysis['rho'] = self.rho
         self.analysis['batch'] = self.batch
@@ -79,7 +79,7 @@ class Analysis:
         
         self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
         self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
-        print("Analysis end")
+        #print("Analysis end")
         return self.analysis
 
 def gaussian(t, a, b):
