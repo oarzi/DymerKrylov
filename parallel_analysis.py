@@ -87,7 +87,7 @@ def varying_gate_probabilities(args):
     print("--- ===   varying_gate_probabilities   === ---")
     L_sim, times_sim, check, d_sim, p_gate, batch_size, procs_sim, batch_procs_num, name = args.L[0], args.times[0], args.check[0], args.d[0], args.p, args.batch[0], args.procs_sim[0], args.batch_procs[0], args.name
 
-    dir_name = "varying_p/L_{}_d{}/".format(L_sim, d_sim)
+    dir_name = "varying_p/L{}_d{}/".format(L_sim, d_sim)
 
     file_name = name + '_experiment_L{}_d{}_p{}'.format(L_sim, d_sim,p_gate[0])
 
@@ -117,11 +117,11 @@ if __name__ == '__main__':
     print(args)
     Experiments = {'bs' : varying_batch_size, "ic" : varying_initial_conditions, 'pgate' : varying_gate_probabilities, 'q' : quantum}
     try:
-        os.mkdir("analyses/varying_p/L_{}_d{}/".format(args.L[0], args.d[0]))
+        os.mkdir("analyses/varying_p/L{}_d{}/".format(args.L[0], args.d[0]))
     except:
         print("Folder exists")
     try:
-        os.mkdir("figs/varying_p/L_{}_d{}/".format(args.L[0], args.d[0]))
+        os.mkdir("figs/varying_p/L{}_d{}/".format(args.L[0], args.d[0]))
     except:
         print("Folder exists")
 

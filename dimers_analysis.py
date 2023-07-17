@@ -27,8 +27,12 @@ def get_experiments_from_paths(dir_path, file_name, description="" ):
         try:
             with open(dir_path + "/" +path, 'rb') as f:
                 _e = pickle.load(f)
-                exp_files.append(_e.results[0])
-        except:
+                if isinstance(_e, Experiment):
+                    exp_files.append(_e.results[0])
+                if isinstance(_e, Analysis):
+                    exp_files.append(_e)
+        except Exception as e:
+            print(e)
             print("Failed: " + dir_path + "/" +path)
 
     experiment = Experiment(file_name +"_" + time.strftime("%Y_%m_%d__%H_%M"),
