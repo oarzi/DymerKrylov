@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import argparse
 import sys
 import numpy as np
+from subprocess import check_output
 
 @dataclass
 class Experiment: 
@@ -62,6 +63,8 @@ class Analysis:
     def save(self):
         with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
             pickle.dump(self, f)
+            check_output('7z a {}.zip {}.pickle'.format(self.file_name, self.file_name), cwd=self.dir_name[:-1])
+            os.remove(self.dir_name + self.file_name + ".pickle")
 
     @classmethod
     def load(cls, filename):
