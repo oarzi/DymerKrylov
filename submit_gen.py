@@ -29,7 +29,7 @@ def get_prefix(mem, cores=1, q='cond-mat', wd_path=''):
 def get_output_files(e='analysis_error.txt', o='analysis_output.txt'):
     output_files = """#$ -o {}
 #$ -e {}
-""".format(e, o)
+""".format(o, e)
     
     return output_files
 
@@ -58,17 +58,21 @@ def get_sge_scripts(args):
         mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
         cores = 1 + sum([p*b for p,b in zip(arg_parse.procs_sim, arg_parse.batch_procs)])
         while True:
-            name = np.random.randint(1000,10000)
-            
-            file_name = "temp_sge_files/sge" + str(name) + ".sge"
+            name = str(np.random.randint(1000,10000))
+            try:
+	        os.system("mkdir temp_sge_files/sge{}".format(name))
+            except:
+                os.system("rm -r temp_sge_fiels/sge{}/*".format(name))
+
+            file_name = "temp_sge_files/sge{}/sge{}.sge".format(name, name)
             with open(file_name, mode="w+", newline=os.linesep) as sge_script:
                 name = "cluster{}".format(name)
                 arg = arg.replace(arg_parse.name, arg_parse.name + "_" + name)
                 print(parser.parse_args(arg.split()))
                 
                 pref = get_prefix(mem ,cores=cores, q='cond-mat')
-                outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
-                                        o='outputs/analysis_output_{}.txt'.format(name))
+                outs = get_output_files(e='temp_sge_files/sge{}/analysis_error_{}.txt'.format(name, name),
+                                        o='temp_sge_fiels/sge{}/analysis_output_{}.txt'.format(name, name))
                 multi = get_multi_proc(cores=cores)
                 script = get_commands(arg)
 
