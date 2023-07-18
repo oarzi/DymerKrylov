@@ -99,14 +99,13 @@ def varying_gate_probabilities(args):
   
     results = [simulator.simulate()] 
 
+    #experiment = dimers_analysis.Experiment(file_name,
+    #                                 "analyses/" + dir_name,
+    #                                  results,
+    #                                  description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
     
-    experiment = dimers_analysis.Experiment(file_name,
-                                      "analyses/" + dir_name,
-                                      results,
-                                      description='Varying initial position size experiment for L={}, times={}, d={}, batch_size={}'.format(L_sim, times_sim, d_sim, batch_size))
-    
-    experiment.save() 
-    dimers_analysis.plot_analyses(results, label = 'd', title=title, name = dir_name + file_name + 
+    #experiment.save() 
+    dimers_analysis.plot_analyses(results, label = 'd', title=title, name = dir_name + file_name + "_" + 
                              time.strftime("%Y_%m_%d__%H_%M"), save=True)
 
                          

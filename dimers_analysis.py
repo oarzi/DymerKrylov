@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 import argparse
 import sys
 import numpy as np
+import subprocess
 
 @dataclass
 class Experiment: 
@@ -44,39 +45,59 @@ def get_experiments_from_paths(dir_path, file_name, description="" ):
     return experiment
 
 @dataclass
-class Analysis:   
+class Analysis: 
+    file_name : str
+    dir_name : str
     L : int
     times: int
     d : int
     batch : int
     p : float
-    rho : np.ndarray
     psis : list
-    file_name : str
-    dir_name : str
-    analysis: dict = field(default_factory=dict, init=False)
+    rho : np.array
+    analysis: dict = field(default_factory=dict, init=False) 
+    _rho : np.ndarray = field(default=-2, init=False, repr=False)
+    _psis : list = field(init=False, repr=False)
     
-    def __post_init__(self):
-        self.analyze()
-        
     def save(self):
         with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
             pickle.dump(self, f)
+        subprocess.check_output(["7z", "a", "{}.7z".format(self.file_name), "{}.pickle".format(self.file_name)], 
+                                cwd=self.dir_name[:-1])
+        os.remove(self.dir_name + self.file_name + ".pickle")
+            
+            
+    @property
+    def rho(self):
+        # print("getter rho")
+        return self._rho
+    
+    @rho.setter
+    def rho(self, rho):
+        # print("setter rho")
+        # print(rho)
+        self._rho = rho
+        self.analyze()
+        
+    @property
+    def psis(self):
+        # print("getter psis")
+        return self._psis
+        
+    @psis.setter
+    def psis(self, new_psis):
+        # print("setter psis")
+        self._psis = new_psis
 
     @classmethod
-    def load(cls, filename):
-        with open(self.dir_name + self.file_name + ".pickle", 'rb') as f:
+    def load(cls, path):
+        with open(path, 'rb') as f:
             return pickle.load(f)
 
     def analyze(self):
-        #print("Analysis start")
-        self.analysis['d'] = self.d
-        self.analysis['rho'] = self.rho
-        self.analysis['batch'] = self.batch
-        self.analysis['times'] = self.times
-        self.analysis['L'] = self.L
-        self.analysis['p'] = self.p
-        
+        # print("Analysis start")
+        # print(self.rho)
+        self.analysis = {}
         self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
         sites = [np.arange(1, self.rho.shape[1])]
 
@@ -86,7 +107,7 @@ class Analysis:
         
         self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
         self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
-        #print("Analysis end")
+        # print("Analysis end")
         return self.analysis
 
 def gaussian(t, a, b):

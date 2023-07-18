@@ -1,5 +1,7 @@
 from dimers_util import *
-from dimers_analysis import *
+import dimers_analysis
+from importlib import reload
+reload(dimers_analysis)
 import pickle
 from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
@@ -31,7 +33,6 @@ class Simulator:
     dir_name : str = "analyses/"
     batch_procs_num : int = 1
     local: bool = True
-    analysis : Analysis = None
 
     def __post_init__(self):
         self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_b{}_d{}___'.format(self.L, self.times, 
@@ -115,11 +116,14 @@ class Simulator:
         H_hop = np.array([self.gate(i, True, False if i < (self.L - 2) else True)  for i in range(0, self.L - 1)], dtype=object)
         
         rho, psis = self.initialize()
+        
+        analysis = dimers_analysis.Analysis(L=self.L, times=rho.shape[0], d=self.d, batch=self.batch, p=self.prob, rho=rho,
+                                    psis=psis, file_name = self.file_name, dir_name=self.dir_name)
 
         for i in range(self.check_interval):
             if not self.local and (i % (self.check_interval//25) == 0):
                 print("======================================================================================")
-                print("{} is {}% completed".format(os.getpid(), 100*i/self.times), flush=True)
+                print("{} is {}% completed".format(os.getpid(), 100*i/self.check_interval), flush=True)
             with Pool(self.batch_procs_num) as p:
                 c_rhos = p.starmap(self.classical_evolutions_batch_points, 
                                [(psi, rho[-1], H_ring, H_hop) for psi in psis])
@@ -131,9 +135,10 @@ class Simulator:
                 rho = np.vstack((rho, np.mean(rhos, axis=0)))
 
                 print("after batch sum", rho.shape)
+                
+                analysis.rho = rho
+                analysis.psis = psis
 
-                analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho,
-                                    psis=psis, file_name = self.file_name, dir_name=self.dir_name)
                 analysis.save()
                 p.close()
             
