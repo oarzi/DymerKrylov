@@ -88,7 +88,7 @@ class Analysis:
     def psis(self, new_psis):
         # print("setter psis")
         self._psis = new_psis
-
+        
     @classmethod
     def load(cls, path):
         with open(path, 'rb') as f:
