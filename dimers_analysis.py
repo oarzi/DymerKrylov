@@ -28,7 +28,7 @@ class Experiment:
         exp_files = []
         for path in os.listdir(dir_path):
             try:
-                with lzma.open(dir_path + "/" +path, 'rb') as f:
+                with open(dir_path + "/" +path, 'rb') as f:
                     _e = pickle.load(f)
                     print(type(_e))
                     if isinstance(_e, Experiment):
@@ -130,14 +130,14 @@ def dist_fit(ana, fit, t, p0=None):
 def plot_dist_scaled(ana, velocity, times, x_max, D=1):
     f, ax = plt.subplots(1, 1, figsize=(12,8))
     rho = ana.rho
-    ana_times = (ana.times*times).astype(np.int32)
+    ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
     xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
 
     x_min = 1
     for i,t in enumerate(ana_times):
         d = D if isinstance(D, numbers.Number) else D[i]
         scaled_x = (xrange-velocity*t)/np.sqrt(d*t)
-        ax.plot(scaled_x, np.sqrt(d*t)*rho[t, x_min : x_max], label='t_{}={}'.format(i, t/ana.times))
+        ax.plot(scaled_x, np.sqrt(d*t)*rho[t, x_min : x_max], label='t_{}={}'.format(i, t/ana.rho.shape[0]))
 
     plt.title(r'$x \rightarrow \frac{x-vt}{\sqrt{t}}$' + ', p={}'.format(ana.p), fontsize='large')
     plt.legend()
@@ -145,7 +145,7 @@ def plot_dist_scaled(ana, velocity, times, x_max, D=1):
 
 def fit_scaled_dist(ana, velocity, t_fit, x_max):
     xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
-    t_fit = int(ana.times*t_fit)
+    t_fit = int(ana.rho.shape[0]*t_fit)
     x_min = 1
     scaled_x = (xrange-velocity*t)/np.sqrt(t_fit)
 
@@ -165,7 +165,7 @@ def extract_velocity(ana ,t_min, t_max):
 
 
 def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False):
-    ana_times = (ana.times*times).astype(np.int32)
+    ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
     plt.figure(1, figsize=(8,16))
     for i, t in enumerate(zip(times, ana_times)):
         plt.subplot(100*len(times) + 10 +i+1)
@@ -272,13 +272,13 @@ def plot_dist(ana, times, title='', save=False, name='', site_max=-1):
     '''
 
     fig, ax = plt.subplots(1, 1, figsize=(14, 6))
-    ana_times = (ana.times*times).astype(np.int32)
+    ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
 
     L = ana.rho.shape[1]
-    x = range(1,L if site_max == -1 else site_max)
+    x = np.arange(1,L if site_max == -1 else site_max, dtype=np.int32)
     for t, at in zip(times, ana_times):
-        y = ana.rho[at, 1:site_max]
-        ax.plot(x[:site_max], y, label='t={}'.format(t))
+        y = ana.rho[at, 1:x[-1]+1]
+        ax.plot(x, y, label='t={}'.format(t))
         ax.annotate(str(t), (x[np.argmax(y)],y[np.argmax(y)]))
     if title:
         ax.set_title(title)
