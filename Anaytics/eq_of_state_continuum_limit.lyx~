@@ -415,7 +415,7 @@ status open
 \begin_layout Plain Layout
 \begin_inset Formula 
 \[
-\partial_{t}P\left(x,t\right)=\underbrace{\frac{\kappa}{4\phi^{2}}}_{K}\partial_{x}^{2}P\left(x,t\right)-\underbrace{\frac{3v}{4\phi}}_{V}\partial_{x}P\left(x,t\right)
+\partial_{t}P\left(x,t\right)=\frac{\kappa}{4\phi^{2}}\partial_{x}^{2}P\left(x,t\right)-\frac{3v}{4\phi}\partial_{x}P\left(x,t\right)=\underbrace{\frac{\kappa}{4\phi^{2}}}_{K}\partial_{x}^{2}P\left(x,t\right)-\underbrace{-\frac{3v}{4\phi}}_{V}\partial_{x}P\left(x,t\right)
 \]
 
 \end_inset
@@ -432,6 +432,17 @@ status open
 \begin_inset Formula 
 \[
 P\underset{t\rightarrow\infty}{\rightarrow}e^{3\phi\frac{v}{\kappa}x}=e^{\frac{V}{K}x}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+P=e^{\frac{-\frac{3v}{4\phi}}{\frac{\kappa}{2\times4\phi^{2}}}x}e^{-\frac{6\phi v}{\kappa}x}
 \]
 
 \end_inset
@@ -1092,10 +1103,34 @@ A\left(x,t\right)=e^{-\frac{V^{2}}{4K}t}e^{\frac{V}{2K}x}
 \end_layout
 
 \begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+thickness "0.4pt"
+separation "3pt"
+shadowsize "4pt"
+framecolor "black"
+backgroundcolor "none"
+status open
+
+\begin_layout Plain Layout
 \begin_inset Formula 
 \[
 \Rightarrow C_{+}e^{\frac{V}{2K}x}+\sum_{k}C_{k,1}\left(\cos\left(\frac{n\pi}{L}x\right)+\frac{VL}{2n\pi K}\sin\left(\frac{n\pi}{L}x\right)\right)=e^{-\frac{V}{2K}x}\delta\left(x-x_{0}\right)
 \]
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -1780,11 +1815,49 @@ Maybe it is better to take:
 \begin_layout Standard
 \begin_inset Formula 
 \[
-B\left(0,t\right)=\begin{cases}
+B\left(x,0\right)=\begin{cases}
 \frac{1}{W}e^{-\frac{V}{2K}x} & \left|x-x_{0}\right|\leq\frac{W}{2}\\
 0 & \left|x-x_{0}\right|>\frac{W}{2}
 \end{cases}
 \]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+thickness "0.4pt"
+separation "3pt"
+shadowsize "4pt"
+framecolor "black"
+backgroundcolor "none"
+status open
+
+\begin_layout Plain Layout
+\begin_inset Formula 
+\[
+\Rightarrow C_{+}e^{\frac{V}{2K}x}+\sum_{k}C_{k,1}\left(\cos\left(\frac{n\pi}{L}x\right)+\frac{VL}{2n\pi K}\sin\left(\frac{n\pi}{L}x\right)\right)=\begin{cases}
+\frac{1}{W}e^{-\frac{V}{2K}x} & \left|x-x_{0}\right|\leq\frac{W}{2}\\
+0 & \left|x-x_{0}\right|>\frac{W}{2}
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
 
 \end_inset
 
@@ -1808,7 +1881,7 @@ B\left(0,t\right)=\begin{cases}
 C_{n,1}\int_{0}^{L}dx\left(\cos\left(\frac{n\pi}{L}x\right)+\frac{VL}{2n\pi K}\sin\left(\frac{n\pi}{L}x\right)\right)^{2}=\frac{1}{W}\int_{x_{0}-\frac{W}{2}}^{x_{0}+\frac{W}{2}}dx\left(\cos\left(\frac{m\pi}{L}x\right)+\frac{VL}{2m\pi K}\sin\left(\frac{m\pi}{L}x\right)\right)e^{-\frac{V}{2K}x}=\\
 =\frac{1}{W}\left(\frac{e^{-\frac{V}{2K}x}\left(\sin\left(\frac{m\pi}{L}x\right)\left(\left(\frac{m\pi}{L}\right)-\frac{VL}{2m\pi K}\frac{V}{2K}\right)-\cos\left(\frac{m\pi}{L}x\right)\left(\left(\frac{V}{2K}\right)+\frac{VL}{2m\pi K}\left(\frac{m\pi}{L}\right)\right)\right)}{\left(\frac{V}{2K}\right)^{2}+\left(\frac{m\pi}{L}\right)^{2}}\right)|_{x_{0}-\frac{W}{2}}^{x_{0}+\frac{W}{2}}=\\
 =\frac{1}{W}\left(\frac{e^{-\frac{V}{2K}x}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}x\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)-\frac{V}{K}\cos\left(\frac{m\pi}{L}x\right)\right)}{\left(\frac{V}{2K}\right)^{2}+\left(\frac{m\pi}{L}\right)^{2}}\right)|_{x_{0}-\frac{W}{2}}^{x_{0}+\frac{W}{2}}=\\
-=\frac{e^{-\frac{V}{2K}x_{0}}}{W}\left(\frac{e^{-\frac{VW}{4K}}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)-\frac{V}{K}\cos\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)\right)-e^{\frac{VW}{4K}}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)+\frac{V}{K}\cos\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\right)}{\left(\frac{V}{2K}\right)^{2}+\left(\frac{m\pi}{L}\right)^{2}}\right)=
+=\frac{e^{-\frac{V}{2K}x_{0}}}{W}\left(\frac{e^{-\frac{VW}{4K}}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)-\frac{V}{K}\cos\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)\right)-e^{\frac{VW}{4K}}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)-\frac{V}{K}\cos\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\right)}{\left(\frac{V}{2K}\right)^{2}+\left(\frac{m\pi}{L}\right)^{2}}\right)
 \end{multline*}
 
 \end_inset
@@ -1819,7 +1892,56 @@ C_{n,1}\int_{0}^{L}dx\left(\cos\left(\frac{n\pi}{L}x\right)+\frac{VL}{2n\pi K}\s
 \begin_layout Standard
 \begin_inset Formula 
 \[
-C_{n,1}=e^{-\frac{V}{2K}x_{0}}\frac{2}{Wm\pi}\frac{\left[e^{-\frac{VW}{4K}}\sin\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)-e^{\frac{VW}{4K}}\sin\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\right]}{\left(1+\left(\frac{VL}{2n\pi K}\right)^{2}\right)}
+\frac{\frac{L}{m\pi}\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)\left[-\left(e^{\frac{VW}{4K}}-e^{-\frac{VW}{4K}}\right)\cos\left(\frac{m\pi W}{2L}\right)\sin\left(\frac{m\pi}{L}x_{0}\right)+\left(e^{-\frac{VW}{4K}}+e^{\frac{VW}{4K}}\right)\cos\left(\frac{m\pi}{L}x_{0}\right)\sin\left(\frac{m\pi W}{2L}\right)\right]+\frac{V}{K}\left(\left(e^{\frac{VW}{4K}}-e^{-\frac{VW}{4K}}\right)\cos\left(\frac{m\pi}{L}x_{0}\right)\cos\left(\frac{m\pi W}{2L}\right)+\left(e^{\frac{VW}{4K}}+e^{-\frac{VW}{4K}}\right)\sin\left(\frac{m\pi}{L}x_{0}\right)\sin\left(\frac{m\pi W}{2L}\right)\right)}{\left(\frac{V}{2K}\right)^{2}+\left(\frac{m\pi}{L}\right)^{2}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+C_{n,1}=\frac{2}{L}\frac{1}{\left(1+\left(\frac{VL}{2n\pi K}\right)^{2}\right)}\frac{e^{-\frac{V}{2K}x_{0}}}{W}\left(\frac{e^{-\frac{VW}{4K}}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)-\frac{V}{K}\cos\left(\frac{m\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)\right)-e^{\frac{VW}{4K}}\left(\frac{L}{m\pi}\sin\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)-\frac{V}{K}\cos\left(\frac{m\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\right)}{\left(\frac{V}{2K}\right)^{2}+\left(\frac{m\pi}{L}\right)^{2}}\right)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\frac{L}{m\pi}\left(e^{\frac{VW}{4K}}-e^{-\frac{VW}{4K}}\right)\cos\left(\frac{m\pi W}{2L}\right)\left[\frac{m\pi}{L}\frac{V}{K}\cos\left(\frac{m\pi}{L}x_{0}\right)-\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)\sin\left(\frac{m\pi}{L}x_{0}\right)\right]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{L}{m\pi}\left(e^{-\frac{VW}{4K}}+e^{\frac{VW}{4K}}\right)\sin\left(\frac{m\pi W}{2L}\right)\left[\left(\left(\frac{m\pi}{L}\right)^{2}-\left(\frac{V}{2K}\right)^{2}\right)\cos\left(\frac{m\pi}{L}x_{0}\right)+\frac{m\pi}{L}\frac{V}{K}\sin\left(\frac{m\pi}{L}x_{0}\right)\right]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\frac{V^{2}}{4K^{2}}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+C_{n,1}=e^{-\frac{V}{2K}x_{0}}\frac{2}{Wn\pi}\frac{\left[e^{-\frac{VW}{4K}}\sin\left(\frac{n\pi}{L}\left(x_{0}+\frac{W}{2}\right)\right)-e^{\frac{VW}{4K}}\sin\left(\frac{n\pi}{L}\left(x_{0}-\frac{W}{2}\right)\right)\right]}{\left(1+\left(\frac{VL}{2n\pi K}\right)^{2}\right)}
 \]
 
 \end_inset
@@ -1831,6 +1953,378 @@ C_{n,1}=e^{-\frac{V}{2K}x_{0}}\frac{2}{Wm\pi}\frac{\left[e^{-\frac{VW}{4K}}\sin\
 \begin_inset Formula 
 \[
 \Rightarrow\int_{0}^{L}dxC_{k,+}e^{\frac{V}{K}x}=\frac{1}{W}\int_{x_{0}-\frac{W}{2}}^{x_{0}+\frac{W}{2}}dx=1\Rightarrow C_{k,+}=\frac{V}{K\left(e^{\frac{V}{K}L}-1\right)}\underset{L\rightarrow\infty}{\rightarrow}-\frac{V}{K}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{t}\rho\left(x,t\right)=K\partial_{x}^{2}\rho\left(x,t\right)-V\partial_{x}\rho\left(x,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\rho\left(x,t\right)=R\left(x-Vt,t\right)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+R\left(x,t\right)=\rho\left(x+Vt,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{x}R\left(x+Vt,t\right)=\lim_{h\rightarrow0}\frac{R\left(x+Vt+h,t\right)-R\left(x+Vt,t\right)}{h}=\partial_{x}\rho\left(x,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{x}R\left(x,t\right)=\lim_{h\rightarrow0}\frac{R\left(x+h,t\right)-R\left(x,t\right)}{h}=\lim_{h\rightarrow0}\frac{\rho\left(x-Vt+h,t\right)-\rho\left(x-Vt,t\right)}{h}=\partial_{x}\rho\left(x-Vt,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{t}\rho=-V\partial_{x}R+\partial_{t}R
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{x}\rho=\partial_{x}R
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\partial_{xx}\rho=\partial_{xx}R
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{t}R\left(x,t\right)=K\partial_{xx}R\left(x,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+\partial_{x}R\left(0-\frac{V}{K}t,t\right)|_{x=L}-\frac{V}{K}R\left(0-\frac{V}{K}t,t\right)=0\\
+\partial_{x}R\left(x-\frac{V}{K}t,t\right)|_{x=L}-\frac{V}{K}R\left(L-\frac{V}{K}t,t\right)=0\\
+R\left(x,0\right)=\delta\left(x-x_{0}\right)
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+\partial_{x}\rho\left(0,t\right)-\frac{V}{K}\rho\left(0,t\right)=0\\
+\partial_{x}\rho\left(L,t\right)-\frac{V}{K}\rho\left(L,t\right)=0\\
+\rho\left(x,0\right)=\delta\left(x-x_{0}\right)
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R\left(x,t\right)=\rho\left(x+Vt,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R\left(x-Vt,t\right)=\rho\left(x,t\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{t}R\left(x,t\right)=K\partial_{xx}R\left(x,t\right)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+R\left(x,t\right)=T\left(t\right)X\left(x\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+\partial_{x}X\left(0-\frac{V}{K}t\right)|_{x=L}-\frac{V}{K}X\left(-\frac{V}{K}t\right)=0\\
+\partial_{x}X\left(x-\frac{V}{K}t\right)|_{x=L}-\frac{V}{K}X\left(L-\frac{V}{K}t\right)=0\\
+R\left(x,0\right)=\delta\left(x-x_{0}\right)
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+X\left(x\right)\partial_{t}T\left(t\right)=KT\left(t\right)\partial_{xx}X\left(x\right)
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\frac{\partial_{t}T\left(t\right)}{T\left(t\right)}=\frac{K\partial_{xx}X\left(x\right)}{X\left(x\right)}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+'
+\begin_inset Formula 
+\[
+\begin{cases}
+\partial_{xx}X\left(x\right)=\lambda X\left(x\right)\\
+\partial_{t}T\left(t\right)=\lambda KT\left(t\right)
+\end{cases}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+T\left(t\right)=e^{\lambda Kt}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+X=Ae^{\lambda x}+Be^{-\lambda x}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\partial_{x}X=\lambda Ae^{\lambda x}-\lambda Be^{-\lambda x}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+\left(\lambda Ae^{\lambda\left(-\frac{V}{K}t\right)}-\lambda Be^{-\lambda\left(-\frac{V}{K}t\right)}\right)-\frac{V}{K}\left(Ae^{\lambda\left(-\frac{V}{K}t\right)}+Be^{-\lambda\left(-\frac{V}{K}t\right)}\right)=0\\
+\left(\lambda Ae^{\lambda\left(L-\frac{V}{K}t\right)}-\lambda Be^{-\lambda\left(L-\frac{V}{K}t\right)}\right)-\frac{V}{K}\left(Ae^{\lambda\left(L-\frac{V}{K}t\right)}+Be^{-\lambda\left(L-\frac{V}{K}t\right)}\right)=0
+\end{cases}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{cases}
+A\left(\lambda-\frac{V}{K}\right)e^{\lambda\left(-\frac{V}{K}t\right)}-B\left(\lambda+\frac{V}{K}\right)e^{-\lambda\left(-\frac{V}{K}t\right)}=0\\
+A\left(\lambda-\frac{V}{K}\right)e^{\lambda\left(L-\frac{V}{K}t\right)}-B\left(\lambda+\frac{V}{K}\right)e^{-\lambda\left(L-\frac{V}{K}t\right)}=0
+\end{cases}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{cases}
+A=B\frac{\left(\lambda+\frac{V}{K}\right)}{\left(\lambda-\frac{V}{K}\right)}e^{-2\lambda\left(-\frac{V}{K}t\right)}\\
+B\left(\lambda+\frac{V}{K}\right)e^{\lambda\left(L+\frac{V}{K}t\right)}-B\left(\lambda+\frac{V}{K}\right)e^{-\lambda\left(L-\frac{V}{K}t\right)}=0
+\end{cases}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+e^{\lambda\left(L+\frac{V}{K}t\right)}-e^{\lambda\left(\frac{V}{K}t-L\right)}=0
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+e^{2\lambda L}=1
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\lambda=0\Rightarrow A=-B
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\lambda=i\frac{n\pi}{L}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+X=Ae^{i\frac{n\pi}{L}x}+Be^{-i\frac{n\pi}{L}x}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\begin{cases}
+\left(i\frac{n\pi}{L}Ae^{i\frac{n\pi}{L}\left(-\frac{V}{K}t\right)}-i\frac{n\pi}{L}Be^{-i\frac{n\pi}{L}\left(-\frac{V}{K}t\right)}\right)-\frac{V}{K}\left(Ae^{i\frac{n\pi}{L}\left(-\frac{V}{K}t\right)}+Be^{-i\frac{n\pi}{L}\left(-\frac{V}{K}t\right)}\right)=0\\
+\left(i\frac{n\pi}{L}Ae^{i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}-i\frac{n\pi}{L}Be^{-i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}\right)-\frac{V}{K}\left(Ae^{i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}+Be^{-i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}\right)=0
+\end{cases}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{cases}
+A=\frac{\left(i\frac{n\pi}{L}+\frac{V}{K}\right)}{\left(i\frac{n\pi}{L}-\frac{V}{K}\right)}e^{i\frac{2n\pi}{L}\frac{V}{K}t}B\\
+Ae^{i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}\left(i\frac{n\pi}{L}-\frac{V}{K}\right)-e^{-i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}\left(i\frac{n\pi}{L}+\frac{V}{K}\right)B=0
+\end{cases}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{cases}
+A=\frac{\left(i\frac{n\pi}{L}+\frac{V}{K}\right)}{\left(i\frac{n\pi}{L}-\frac{V}{K}\right)}e^{i\frac{2n\pi}{L}\frac{V}{K}t}B\\
+B\left(e^{i\frac{n\pi}{L}L}-e^{-i\frac{n\pi}{L}\left(L-\frac{V}{K}t\right)}\right)=0
+\end{cases}
+\]
+
+\end_inset
+
+
+\begin_inset Formula 
+\[
+\begin{cases}
+A=\frac{\left(i\frac{n\pi}{L}+\frac{V}{K}\right)}{\left(i\frac{n\pi}{L}-\frac{V}{K}\right)}e^{i\frac{2n\pi}{L}\frac{V}{K}t}B\\
+\left(-1\right)^{n}B\left(1-\left(-1\right)^{\frac{nV}{K}t}\right)=0
+\end{cases}
 \]
 
 \end_inset

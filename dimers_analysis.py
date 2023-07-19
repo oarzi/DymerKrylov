@@ -9,6 +9,7 @@ import argparse
 import sys
 import numpy as np
 import subprocess
+import lzma
 
 @dataclass
 class Experiment: 
@@ -18,31 +19,31 @@ class Experiment:
     description : str = ''
     
     def save(self):
-        with open(self.dir_name + "/" +  self.file_name + ".pickle", 'wb') as f:
+        with lzma.open(self.dir_name + "/" +  self.file_name + ".pickle", 'wb', preset=9) as f:
             pickle.dump(self, f)
             print("Saved at {}".format(self.dir_name + "/" + self.file_name))
-            
-def get_experiments_from_paths(dir_path, file_name, description="" ):
-    exp_files = []
-    for path in os.listdir(dir_path):
-        try:
-            with open(dir_path + "/" +path, 'rb') as f:
-                _e = pickle.load(f)
-                if isinstance(_e, Experiment):
-                    exp_files.append(_e.results[0])
-                if isinstance(_e, Analysis):
-                    exp_files.append(_e)
-        except Exception as e:
-            print(e)
-            print("Failed: " + dir_path + "/" +path)
-
-    experiment = Experiment(file_name +"_" + time.strftime("%Y_%m_%d__%H_%M"),
-                                      "analyses/good",
-                                      [e for e in exp_files],
-                                      description=description)
     
-    experiment.save()
-    return experiment
+    @classmethod
+    def load(cls, dir_path, file_name, description="" ):
+        exp_files = []
+        for path in os.listdir(dir_path):
+            try:
+                with lzma.open(dir_path + "/" +path, 'rb') as f:
+                    _e = pickle.load(f)
+                    print(type(_e))
+                    if isinstance(_e, Experiment):
+                        exp_files.append(_e.results[0])
+                    if isinstance(_e, Analysis):
+                        exp_files.append(_e)
+            except Exception as e:
+                print(e)
+                print("Failed: " + dir_path + "/" +path)
+
+        experiment = Experiment(file_name,
+                                          "analyses/good",
+                                          [e for e in exp_files],
+                                          description=description)
+        return experiment
 
 @dataclass
 class Analysis: 
@@ -56,17 +57,18 @@ class Analysis:
     psis : list
     rho : np.array
     analysis: dict = field(default_factory=dict, init=False) 
-    _rho : np.ndarray = field(default=-2, init=False, repr=False)
+    _rho : np.ndarray = field(init=False, repr=False)
     _psis : list = field(init=False, repr=False)
     
     def save(self):
-        with open(self.dir_name + self.file_name + ".pickle", 'wb') as f:
+        with lzma.open(self.dir_name + self.file_name + ".pickle", "wb", preset=9) as f:
             pickle.dump(self, f)
-        subprocess.check_output(["7z", "a", "{}.7z".format(self.file_name), "{}.pickle".format(self.file_name)], 
-                                cwd=self.dir_name[:-1])
-        os.remove(self.dir_name + self.file_name + ".pickle")
             
-            
+    @classmethod
+    def load(cls, path):
+        with lzma.open(path, 'rb') as f:
+            return pickle.load(f)
+                
     @property
     def rho(self):
         # print("getter rho")
@@ -85,14 +87,9 @@ class Analysis:
         return self._psis
         
     @psis.setter
-    def psis(self, new_psis):
+    def psis(self, psis):
         # print("setter psis")
-        self._psis = new_psis
-        
-    @classmethod
-    def load(cls, path):
-        with open(path, 'rb') as f:
-            return pickle.load(f)
+        self._psis = psis
 
     def analyze(self):
         # print("Analysis start")
@@ -194,7 +191,7 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
         fig.suptitle(title)
     
     for a in analyses:
-        a_label = "{}=".format(label) + str(a.analysis[label])
+        a_label = "{}=".format(label) + str(a.__dict__[label])
         pos = a.analysis['Mean'][:t_max]
         ax[0].plot(pos, label=a_label, linewidth=lwdt)
         x = len(pos)//2
@@ -204,7 +201,7 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
     ax[0].set_title("Mean position")
 
     for a in analyses:
-        ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
+        ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.__dict__[label]), linewidth=lwdt)
     ax[1].legend()
     ax[1].set_title("Speed")
 
