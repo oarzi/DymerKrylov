@@ -64,7 +64,7 @@ def get_initial_config_point(L, defect, size):
 
 def get_initial_config_point_quantum(L,d, configs):
     dim = configs.shape[0]
-    c0 = get_initial_config_point(L, d)
+    c0 = get_initial_config_point(L, d, 1)
     i0 = np.where(np.dot(configs,c0.T)//np.sum(c0)==1)[0][0]
     psi = np.zeros((dim, 1)); 
     psi[i0] = 1.
@@ -223,7 +223,8 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
 
     return
 
-def load_configs(fn):
+def load_configs(L):
+    fn = "matrices/basis_L{}.dat".format(L)
     if os.path.isfile(fn)==True and os.path.getsize(fn)>0:
         fin = open(fn,'rb')
         dim = int(struct.unpack('i', fin.read(4))[0])
@@ -236,3 +237,27 @@ def load_configs(fn):
         return np.reshape(a,(dim,3*L))
     else:
         print(" load_configs {} -File not found!".format(fn))
+        
+def load_matrix(fn):
+    if os.path.isfile(fn)==True and os.path.getsize(fn)>0:
+        fin = open(fn,'rb')
+        dim = int(struct.unpack('i', fin.read(4))[0])
+        nnz = int(struct.unpack('i', fin.read(4))[0])
+        print (dim,nnz)
+
+        a=np.array(np.fromfile(fin, dtype=np.int32))
+        fin.close()
+        a=np.reshape(a,(nnz,3))
+        H=sparse.csr_matrix( (a[:,2],(a[:,0],a[:,1])), shape=(dim,dim),dtype=np.float64)
+        return H
+    else:
+        print("load_matrix {} - File not found!".format(fn))
+        
+def load_data(L):
+    H_ring = load_matrix('matrices/matrix_ring_L{}.dat'.format(L))
+    H_hopp = load_matrix('matrices/matrix_hopp_L{}.dat'.format(L))
+    
+    
+    print("#######################")
+    
+    return {"H_ring" : H_ring, "H_hopp" : H_hopp}

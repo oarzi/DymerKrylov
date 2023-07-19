@@ -1,7 +1,8 @@
-from dimers_util import *
+import dimers_util
 import dimers_analysis
 from importlib import reload
 reload(dimers_analysis)
+reload(dimers_util)
 import pickle
 from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
@@ -108,133 +109,100 @@ class Simulator:
         return rho, psis
     
     
+    def get_H(self):
+        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
+        H_hop = np.array([self.gate(i, True, False if i < (self.L - 2) else True)  for i in range(0, self.L - 1)],
+                         dtype=object)
+        
+        return (H_ring, H_hop)
     
     def simulate(self):
-        print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(os.getpid(), self.L, self.times, self.d, self.batch, self.batch_procs_num, time.strftime("%Y_%m_%d__%H_%M")))
+        print("Starting id: {}, L =  {}, # times = {}, d = {}, #batch = {} , # of batches = {} | {}".format(
+            os.getpid(), self.L, self.check_interval*self.times, self.d, self.batch, self.batch_procs_num, 
+            time.strftime("%Y_%m_%d__%H_%M")))
         
-        H_ring = np.array([self.gate(i, False) for i in range(0, self.L - 1)], dtype=object)
-        H_hop = np.array([self.gate(i, True, False if i < (self.L - 2) else True)  for i in range(0, self.L - 1)], dtype=object)
+        H = self.get_H()
+        rho, psi = self.initialize()
         
-        rho, psis = self.initialize()
-        
-        analysis = dimers_analysis.Analysis(L=self.L, times=rho.shape[0], d=self.d, batch=self.batch, p=self.prob, rho=rho,
-                                    psis=psis, file_name = self.file_name, dir_name=self.dir_name)
+        analysis = dimers_analysis.Analysis(L=self.L, times=self.check_interval*self.times, d=self.d, batch=self.batch,
+                                            p=self.prob, rho=rho, psis=psi, file_name = self.file_name, 
+                                            dir_name=self.dir_name)
 
-        for i in range(self.check_interval):
+        for i in self.progress_bar(range(self.check_interval)):
             if not self.local and (i % (self.check_interval//25) == 0):
                 print("======================================================================================")
                 print("{} is {}% completed".format(os.getpid(), 100*i/self.check_interval), flush=True)
-            with Pool(self.batch_procs_num) as p:
-                c_rhos = p.starmap(self.classical_evolutions_batch_points, 
-                               [(psi, rho[-1], H_ring, H_hop) for psi in psis])
-                rhos, psis = [res[0] for res in c_rhos], [res[1] for res in c_rhos]
+            rho, psi = self.simulation_iteration(rho, psi, H)
 
-                print("before batch sum ({},{})".format(len(c_rhos), rhos[0].shape))
-                print("psi shape {}".format(psis[0].shape))
-                
-                rho = np.vstack((rho, np.mean(rhos, axis=0)))
-
-                print("after batch sum", rho.shape)
-                
-                analysis.rho = rho
-                analysis.psis = psis
-
-                analysis.save()
-                p.close()
+            analysis.rho = rho
+            analysis.psis = psi
+            analysis.save()           
             
-        print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L, self.times, 
+        print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L,
+                                                                                        self.check_interval*self.times, 
                                                                                         self.d, self.batch, 
                                                                                         time.strftime("%d_%m_%Y__%H_%M")))
         return analysis
     
+    def simulation_iteration(self, rho, psis, H):
+        H_ring, H_hop = H
+        with Pool(self.batch_procs_num) as p:
+            c_rhos = p.starmap(self.classical_evolutions_batch_points, 
+                               [(psi, rho[-1], H_ring, H_hop) for psi in psis])
+            rhos, psis = [res[0] for res in c_rhos], [res[1] for res in c_rhos]
+
+            print("before batch sum ({},{})".format(len(c_rhos), rhos[0].shape))
+            print("psi shape {}".format(psis[0].shape))
+
+            rho = np.vstack((rho, np.mean(rhos, axis=0)))
+
+            print("after batch sum", rho.shape)
+            p.close()   
+        return rho, psis
+    
     def classical_evolutions_batch_points(self, psi, rho, H_ring, H_hop):
         
-        for i in self.progress_bar(range(self.times)):
-            #if not self.local and (i % (self.times//25) == 0):
-            #   print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            
+        for i in range(self.times):
             psi = promote_psi_classical(psi, H_ring, H_hop, self.prob)
             charge = defect_density_point(psi)
             rho = np.vstack((rho, np.mean(charge, axis=0)))
 
-        #print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
-
         return rho[1:], psi
     
-
-    def quantum_evolutions_batch_points(self, dt=0.5):
-        H = load_data(self.L)
-        H_ring, H_hop, configs = H["H_ring"], H["H_hopp"], H["configs"]
-
-        psi = get_initial_config_point_quantum(self.L, self.d, configs)
-
-        rho = np.array([defect_density_points_quantum(configs,psi)])
-
-        for i in  self.progress_bar(range(self.times)):
-            if not self.local and (i % (self.times//25) == 0):
-                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            psi = expm_multiply(-1j*(self.prob*H_ring + (1 - self.prob)*H_hop)*dt,psi)
-            rho = np.vstack((rho, defect_density_points_quantum(configs,psi)))
-
-        analysis = Analysis(L=self.L, times=self.times, d=self.d, batch=self.batch, p=self.prob, rho=rho, file_name = self.file_name, dir_name=self.dir_name)
-        
-        analysis.save()
+@dataclass
+class QuantumSimulator(Simulator):
+    def initialize(self):
+        if self.from_file:
+            search = "L{}_d{}_p{}".format(self.L, self.d, self.prob)
+            path = next(x for x in os.listdir(self.dir_name) if search in x)
+            with open(self.dir_name  + path, 'rb') as f:
+                ana = pickle.load(f)
+                rho, psi = ana.rho, ana.psis
+        else:
+            configs = dimers_util.load_configs(self.L)
+            psi = get_initial_config_point_quantum(self.L, self.d, configs)
+            rho = np.array([defect_density_points_quantum(configs,psi)])
             
-        print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L, self.times, 
-                                                                                        self.d, self.batch, 
-                                                                                        time.strftime("%d_%m_%Y__%H_%M")))
-        return analysis
+        print(rho.shape)
+        return rho, psi
     
-
-    def classical_evolutions_batch(self, H):
-        H_ring, H_hopp, = H['H_ring'], H['H_hopp']
-        p_array = np.concatenate((np.ones(len(H_ring)),self.prob*np.ones(len(H_hopp))))/(len(H_ring)+self.prob*len(H_hopp))
-
-        allgates = H_ring + H_hopp
-
-        initial_psi = [get_initial_config(self.L, self.d)]*(self.batch//self.batch_procs_num)
-        psi = np.array(initial_psi, dtype=np.int32)
-        # print("psi0.shape=", psi.shape)
+    def get_H(self):
+        configs = dimers_util.load_configs(self.L)
+        H = dimers_util.load_data(self.L)
+        H_ring, H_hop = H["H_ring"], H["H_hopp"]
         
-        charge = np.apply_along_axis(defect_density, 1 , psi)
-        rho = np.sum(charge, axis=0)
-        
-        def apply(f):
-            return f[0](f[1])
+        return (H_ring, H_hop, configs)
+    
+    def simulation_iteration(self, rho, psi, H):
 
-        for i in self.progress_bar(range(self.times)):
-            if not self.local and (i % (self.times//25) == 0):
-                print("{}->{} is  {}% completed".format(os.getppid(), os.getpid(), 100*i/self.times), flush=True)
-            rng = np.random.default_rng()
-            gates = rng.choice(allgates, size=self.batch//self.batch_procs_num, p=p_array)
-            psi = np.array(list(map(apply, zip(gates_i, psi))))
-            # print("psi.shape=", psi.shape)
-            charge = np.apply_along_axis(defect_density, 1 , psi)
-            charge0 = charge[:,0]
-            if np.sum(charge0) !=  psi.shape[0]:
-                with open("bad_matrix{}.txt".format(os.getpid()), "w") as f:
-                    np.set_printoptions(threshold=sys.maxsize)
-                    f.write(str(np.sum(charge0)) + "\n")
-                    f.write(str(charge0.shape) + "\n")
-                    f.write(str(psi.shape) + "\n")
-                    f.write(str(np.argwhere(charge0 != 1)) + "\n")
-                    f.write("========================================\n")
-                    f.write("Charge0: \n" + str(charge0) + "\n")                                
-                    f.write("========================================\n")
-                    f.write("Bad Charge:\n" + str(charge[np.argwhere(charge0 != 1)]) + "\n")
-                    f.write("========================================\n")
-                    f.write("Gates:\n" + str(gates_i[np.argwhere(charge0 != 1)]))
-                raise ValueError()
-            # print("charge.shape=", charge.shape)
-            rho = np.vstack((rho, np.sum(charge, axis=0)))
+        H_ring, H_hop, configs = H
 
-            # psi = np.vstack((psi, [psi_next]))
-        print("rho.shape=", rho.shape)
-
-        if not self.local:
-            print("{}->{} finished".format(os.getppid(), os.getpid(), flush=True))
-
-        return rho
+        for i in range(self.times):
+            psi = expm_multiply(-1j*H_ring, psi)
+            psi = expm_multiply(-1j*H_hop, psi)
+            rho = np.vstack((rho, defect_density_points_quantum(configs,psi)))
+            
+        return rho, psi
     
 def test_rand(n):
     with Pool(5) as p:
