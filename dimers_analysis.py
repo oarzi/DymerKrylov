@@ -28,12 +28,13 @@ class Experiment:
         exp_files = []
         for path in os.listdir(dir_path):
             try:
-                with open(dir_path + "/" +path, 'rb') as f:
+                with lzma.open(dir_path + "/" +path, 'rb') as f:
                     _e = pickle.load(f)
                     print(type(_e))
                     if isinstance(_e, Experiment):
                         exp_files.append(_e.results[0])
                     if isinstance(_e, Analysis):
+                        e.psis= []
                         exp_files.append(_e)
             except Exception as e:
                 print(e)
@@ -89,7 +90,7 @@ class Analysis:
     @psis.setter
     def psis(self, psis):
         # print("setter psis")
-        self._psis = psis
+        self._psis = []
 
     def analyze(self):
         # print("Analysis start")
