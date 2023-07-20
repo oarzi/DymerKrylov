@@ -6,7 +6,6 @@ reload(dimers_util)
 import pickle
 from multiprocessing import Pool, Queue, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
-import matplotlib.pyplot as plt
 import time
 try:
     from tqdm import tqdm
@@ -15,7 +14,9 @@ except ModuleNotFoundError:
 import os
 from dataclasses import dataclass, field
 import argparse
-import sys
+import numpy as np
+import lzma
+
     
 @dataclass
 class Simulator:
@@ -24,21 +25,22 @@ class Simulator:
     d : int
     
     batch : int = 1
-    gate : object = Gate2
+    gate : object = dimers_util.Gate2
     prob : int = 0.5
     check_interval: int = 100
     from_file : bool = False
     
     
-    file_name : str = ""
+    file_name : str = field(default="", init=True)
     dir_name : str = "analyses/"
     batch_procs_num : int = 1
     local: bool = True
-
+    
     def __post_init__(self):
-        self.file_name = self.file_name if self.file_name else 'analysis_L{}_t{}_b{}_d{}___'.format(self.L, self.times, 
-                                                                          self.batch, self.d,   
-                                                                          time.strftime("%Y_%m_%d__%H_%M"))
+        if not self.file_name:
+            self.file_name = 'analysis_L{}_d{}_t{}___'.format(self.L, self.d, self.check_interval*self.times,  
+                                                              time.strftime("%Y_%m_%d__%H_%M"))
+    
     def progress_bar(self, iterable):
         if self.local:
             tqdm_text = "#" + ("{}->".format(os.getppid()) + "{}".format(os.getpid())).ljust(12) + " "
@@ -102,8 +104,8 @@ class Simulator:
                 ana = pickle.load(f)
                 rho, psis = ana.rho, ana.psis
         else:
-            psis = [get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
-            rho = np.mean(defect_density_point(psis[0]), axis=0).reshape((1, self.L))
+            psis = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
+            rho = np.mean(dimers_util.defect_density_point(psis[0]), axis=0).reshape((1, self.L))
             
         print(rho.shape)
         return rho, psis
@@ -125,7 +127,7 @@ class Simulator:
         rho, psi = self.initialize()
         
         analysis = dimers_analysis.Analysis(L=self.L, times=self.check_interval*self.times, d=self.d, batch=self.batch,
-                                            p=self.prob, rho=rho, psis=psi, file_name = self.file_name, 
+                                            p=self.prob, rho=rho, psis=[], file_name = self.file_name, 
                                             dir_name=self.dir_name)
 
         for i in self.progress_bar(range(self.check_interval)):
@@ -135,8 +137,9 @@ class Simulator:
             rho, psi = self.simulation_iteration(rho, psi, H)
 
             analysis.rho = rho
-            analysis.psis = psi
-            analysis.save()           
+            analysis.save()  
+            with lzma.open(self.dir_name + self.file_name + "_psi.pickle", "wb", preset=9) as f:
+                pickle.dump(psi, f)
             
         print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L,
                                                                                         self.check_interval*self.times, 
@@ -164,7 +167,7 @@ class Simulator:
         
         for i in range(self.times):
             psi = promote_psi_classical(psi, H_ring, H_hop, self.prob)
-            charge = defect_density_point(psi)
+            charge = dimers_util.defect_density_point(psi)
             rho = np.vstack((rho, np.mean(charge, axis=0)))
 
         return rho[1:], psi
@@ -180,8 +183,8 @@ class QuantumSimulator(Simulator):
                 rho, psi = ana.rho, ana.psis
         else:
             configs = dimers_util.load_configs(self.L)
-            psi = get_initial_config_point_quantum(self.L, self.d, configs)
-            rho = np.array([defect_density_points_quantum(configs,psi)])
+            psi = dimers_util.get_initial_config_point_quantum(self.L, self.d, configs)
+            rho = np.array([dimers_util.defect_density_points_quantum(configs,psi)])
             
         print(rho.shape)
         return rho, psi
@@ -200,7 +203,7 @@ class QuantumSimulator(Simulator):
         for i in range(self.times):
             psi = expm_multiply(-1j*H_ring, psi)
             psi = expm_multiply(-1j*H_hop, psi)
-            rho = np.vstack((rho, defect_density_points_quantum(configs,psi)))
+            rho = np.vstack((rho, dimers_util.defect_density_points_quantum(configs,psi)))
             
         return rho, psi
     
