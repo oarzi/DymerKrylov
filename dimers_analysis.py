@@ -13,37 +13,39 @@ import lzma
 
 @dataclass
 class Experiment: 
-    file_name : str
-    dir_name : str
     results : list
+    file_name : str = field(default="dimer_experiment")
+    dir_name : str = field(default='/analyses')
     description : str = ''
     
     def save(self):
-        with lzma.open(self.dir_name + "/" +  self.file_name + ".pickle", 'wb', preset=9) as f:
+        with lzma.open(self.dir_name + "/" + self.file_name + ".pickle", 'wb', preset=9) as f:
             pickle.dump(self, f)
             print("Saved at {}".format(self.dir_name + "/" + self.file_name))
     
     @classmethod
     def load(cls, dir_path, file_name, description="" ):
         exp_files = []
-        for path in os.listdir(dir_path):
+        dir_paths = os.listdir(dir_path)
+        for idx, path in enumerate(dir_paths):
             try:
                 with lzma.open(dir_path + "/" +path, 'rb') as f:
+                    print("Loading {}/{}: {} ...".format(idx + 1, len(dir_paths) ,path))
                     _e = pickle.load(f)
                     print(type(_e))
                     if isinstance(_e, Experiment):
+                        print("Experiment loaded")
                         exp_files.append(_e.results[0])
                     if isinstance(_e, Analysis):
-                        e.psis= []
+                        print("Analysis loaded")
+                        _e.psis = []
                         exp_files.append(_e)
             except Exception as e:
                 print(e)
                 print("Failed: " + dir_path + "/" +path)
 
-        experiment = Experiment(file_name,
-                                          "analyses/good",
-                                          [e for e in exp_files],
-                                          description=description)
+        experiment = Experiment(sorted(exp_files, key= lambda e: e.p), file_name
+                                ,"analyses/good", description=description)
         return experiment
 
 @dataclass
@@ -55,11 +57,11 @@ class Analysis:
     d : int
     batch : int
     p : float
-    psis : list
     rho : np.array
-    analysis: dict = field(default_factory=dict, init=False) 
+    analysis: dict = field(default_factory=dict, init=False)
     _rho : np.ndarray = field(init=False, repr=False)
     _psis : list = field(init=False, repr=False)
+    psis : list = field(default_factory=list, init=False)
     
     def save(self):
         with lzma.open(self.dir_name + self.file_name + ".pickle", "wb", preset=9) as f:
@@ -94,19 +96,37 @@ class Analysis:
 
     def analyze(self):
         # print("Analysis start")
-        # print(self.rho)
         self.analysis = {}
-        self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
-        sites = [np.arange(1, self.rho.shape[1])]
 
-        self.analysis['Mean'] = np.average(np.repeat(sites,self.rho.shape[0],axis=0), axis=1, weights=self.rho[:, 1:]).reshape(self.analysis['Median'].shape)
+        sites = np.arange(1, self.rho.shape[1]).reshape(1, self.rho.shape[1] - 1)
+        weigths_avg = np.repeat(sites, self.rho.shape[0], axis=0)
+        self.analysis['Mean'] = np.average(weigths_avg, axis=1,
+                                           weights=self.rho[:, 1:]).reshape(self.rho.shape[0])
         
-        self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
-        
-        self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
-        self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
+        self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -  
+                                                   self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1,
+                                                  weights=self.rho[:, 1:])).reshape(sself.rho.shape[0])
+
         # print("Analysis end")
         return self.analysis
+
+def analyze_old(rho):
+    # print("Analysis start")
+    # print(self.rho)
+    self.analysis = {}
+    self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
+
+    sites = np.arange(1, self.rho.shape[1]).reshape(1, self.rho.shape[1] - 1)
+    weigths_avg = np.repeat(sites, self.rho.shape[0], axis=0)
+    self.analysis['Mean'] = np.average(weigths_avg, axis=1,
+                                       weights=self.rho[:, 1:]).reshape(self.rho.shape[0])
+
+    self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
+
+    self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
+    self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
+    # print("Analysis end")
+    return self.analysis
 
 def gaussian(t, a, b):
     return (1/(b*np.sqrt(2*np.pi))) * np.exp(-0.5 * ((t-a)/b)**2)
@@ -117,15 +137,11 @@ def exponential(t, a):
 def inv_pol(t, a):
     return a*np.exp(-a*t)
 
-def dist_fit(ana, fit, t, p0=None):
-    #print(ana.rho[t,1:] != 0)
-    #print(np.argwhere(ana.rho[t,1:] != 0))
-    x_max, x_min = np.argwhere(ana.rho[t,1:] != 0)[-1][0]+5, np.argwhere(ana.rho[t,1:] != 0)[0][0] - 5
-    x_max, x_min = min([x_max, ana.rho.shape[1]]), max([x_min, 1])
-    #print(x_max, x_min)
-    popt, pcov = curve_fit(fit, np.arange(x_min, x_max), ana.rho[t,x_min:x_max], bounds=(0, x_max),p0=p0)
-    #print("L={}, ".format(ana.analysis['L']), "t={}: ".format(t), "Mean = {}, ".format(popt[0]),
-    #  "Width = {}".format(popt[1]))
+def dist_fit(rho, fit, t, p0=None):
+    x_max, x_min = np.argwhere(rho[t,1:] != 0)[-1][0]+5, np.argwhere(rho[t,1:] != 0)[0][0] - 5
+    x_max, x_min = min([x_max, rho.shape[1]]), max([x_min, 1])
+    popt, pcov = curve_fit(fit, np.arange(x_min, x_max), rho[t,x_min:x_max], bounds=(0, x_max),p0=p0)
+
     return popt, pcov, x_max, x_min
 
 def plot_dist_scaled(ana, velocity, times, x_max, D=1):
@@ -161,21 +177,26 @@ def extract_velocity(ana ,t_min, t_max):
     bound_low = [100*(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max])), ana.analysis['Mean'][t_min]/10 ]
     bound_up = [0, ana.analysis['Mean'][t_min]*10]
 
-    popt, pcov = curve_fit(fit, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max], bounds=(bound_low, bound_up),p0=(-0.5, ana.analysis['Mean'][t_min]))
+    popt, pcov = curve_fit(fit_velocity, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max], bounds=(bound_low, bound_up),p0=(-0.5, ana.analysis['Mean'][t_min]))
     return popt, pcov
 
 
-def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False):
+def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False, site_max=-1):
     ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-    plt.figure(1, figsize=(8,16))
+    plt.figure(1, figsize=(8,3))
+    site_max = ana.rho.shape[0] if site_max == -1 else site_max
+    res = {}
     for i, t in enumerate(zip(times, ana_times)):
         plt.subplot(100*len(times) + 10 +i+1)
-        popt_t, pcov_t, x_max, x_min = dist_fit(ana, f, t[1], p0)
+        popt_t, pcov_t, x_max, x_min = dist_fit(ana.rho[:, :site_max], f, t[1], p0)
+        print(x_min, x_max)
+        res[t[0]]= (popt_t, pcov_t)
+        print("Errors: {}".format(np.sqrt(np.diag(pcov_t))))
         xrange = np.arange(x_min, x_max)
         y = ana.rho[t[1],x_min:x_max]
         plt.plot(xrange, y, label="Simulation L={}".format(str(ana.L)))
         plt.plot(xrange, f(xrange, *popt_t),label="{} fit L={}, {}".format(label, str(ana.L), *popt_t))
-        plt.title("t={}".format(t[0]))
+        plt.title("p={}, L={}, d={}, t={}".format(ana.p, ana.L, ana.d, t[0]))
         plt.legend()
         if log_scale_x:
             plt.xscale("log", base=log_scale_x)
@@ -183,28 +204,30 @@ def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False)
             plt.yscale("log", base=log_scale_y)
     plt.tight_layout()
     plt.show()
+    return res
 
 def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False, t_max=-1):
     lwdt = 1
 
-    fig, ax = plt.subplots(2, gridspec_kw={'height_ratios':[1, 1]}, figsize=(13, 10))
+    fig, ax = plt.subplots(1, figsize=(13, 10))
+        # fig, ax = plt.subplots(1, gridspec_kw={'height_ratios':[1, 1]}, figsize=(13, 10))
     if title:
         fig.suptitle(title)
     
     for a in analyses:
         a_label = "{}=".format(label) + str(a.__dict__[label])
         pos = a.analysis['Mean'][:t_max]
-        ax[0].plot(pos, label=a_label, linewidth=lwdt)
+        ax.plot(pos, label=a_label, linewidth=lwdt)
         x = len(pos)//2
         y = pos[x]
-        ax[0].annotate(a_label, (x,y))
-    ax[0].legend()
-    ax[0].set_title("Mean position")
+        ax.annotate(a_label, (x,y))
+    ax.legend()
+    ax.set_title("Mean position")
 
-    for a in analyses:
-        ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.__dict__[label]), linewidth=lwdt)
-    ax[1].legend()
-    ax[1].set_title("Speed")
+    # for a in analyses:
+    #     ax[1].plot(a.analysis['speed'][:t_max], label="{}=".format(label) + str(a.__dict__[label]), linewidth=lwdt)
+    # ax[1].legend()
+    # ax[1].set_title("Speed")
 
     # for a in analyses:
     #     ax[2].plot(a.analysis['acc'][:t_max], label="{}=".format(label) + str(a.analysis[label]), linewidth=lwdt)
@@ -213,12 +236,12 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
     fig.tight_layout()
     if log_scale_x:
         ax[0].set_xscale("log", base=log_scale_x)
-        ax[1].set_xscale("log", base=log_scale_x)
-        ax[2].set_xscale("log", base=log_scale_x)
+        # ax[1].set_xscale("log", base=log_scale_x)
+        # ax[2].set_xscale("log", base=log_scale_x)
     if log_scale_y:
         ax[0].set_yscale("log", base=log_scale_y)
-        ax[1].set_yscale("log", base=log_scale_y)
-        ax[2].set_yscale("log", base=log_scale_y)
+        # ax[1].set_yscale("log", base=log_scale_y)
+        # ax[2].set_yscale("log", base=log_scale_y)
     if save and name:
         plt.savefig("figs/" + name + '.png', format='png')
     plt.show()
@@ -248,15 +271,17 @@ def plot_analyses_old(analyses, label, save=False, title='', name=''):
         plt.savefig("figs/" + name + '.png', format='png')
     plt.show()
 
-def plot_rho(analysis,c=False):
-    plt.figure(figsize=[16,12])
-    plt.pcolor(analysis['rho'], cmap='binary')
+def plot_rho(analysis,c=False, t_max=-1):
+    plt.figure(figsize=[10,12])
+    plt.pcolor(analysis.rho, cmap='binary')
     
-    y = range(analysis['rho'].shape[0])
-    plt.plot(analysis['Median'], y, 'b-', linewidth=2, label="Median")
-    plt.plot(analysis['Mean'], y, color='lime', linestyle='-', linewidth=1, label="Mean")
+    t_max = analysis.rho.shape[0] if t_max ==-1 else t_max
+    y = np.arange(t_max)
     
-    plt.fill_betweenx(y, analysis['Mean'] - analysis['std'], analysis['Mean'] + analysis['std'],
+    # plt.plot(analysis.analysis['Median'], y, 'b-', linewidth=2, label="Median")
+    plt.plot(analysis.analysis['Mean'], y, color='lime', linestyle='-', linewidth=1, label="Mean")
+    
+    plt.fill_betweenx(y, analysis.analysis['Mean'] - analysis.analysis['std'], analysis.analysis['Mean'] + analysis.analysis['std'],
                  color='darkgreen', alpha=0.2, label="std")
 
 
