@@ -11,8 +11,8 @@
 #$ -b y
 #$ -q cond-mat-short
 
-#$ -o analysis_output.txt
-#$ -e analysis_error.txt
+#$ -o analyses/analysis_report__output.txt
+#$ -e analyses/analysis_report_error.txt
 
 
 ## export PATH="/mount/packs/intelpython36/bin:$PATH"
@@ -22,5 +22,5 @@ export OMP_NUM_THREADS=38   # This should be the *same* number as in the line ``
 
 echo "Execute job on host $HOSTNAME at $(date)"
 #python parallel_analysis.py
-python parallel_analysis.py
+python analysis.py
 echo "finished job at $(date)"

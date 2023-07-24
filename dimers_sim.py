@@ -14,14 +14,11 @@ except ModuleNotFoundError:
 import os
 from dataclasses import dataclass, field
 import argparse
-<<<<<<< HEAD
+
 import sys
-import numpy as np
-=======
+
 import numpy as np
 import lzma
-
->>>>>>> 8f5bbdb17621cd2e1350c1bdb87b86d9355ed477
     
 @dataclass
 class Simulator:
