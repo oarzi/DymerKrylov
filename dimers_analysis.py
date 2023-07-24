@@ -39,6 +39,7 @@ class Experiment:
                     if isinstance(_e, Analysis):
                         print("Analysis loaded")
                         _e.psis = []
+                        _e.analyze()
                         exp_files.append(_e)
             except Exception as e:
                 print(e)
@@ -105,7 +106,7 @@ class Analysis:
         
         self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -  
                                                    self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1,
-                                                  weights=self.rho[:, 1:])).reshape(sself.rho.shape[0])
+                                                  weights=self.rho[:, 1:])).reshape(self.rho.shape[0])
 
         # print("Analysis end")
         return self.analysis
@@ -128,6 +129,17 @@ def analyze_old(rho):
     # print("Analysis end")
     return self.analysis
 
+def steady_state(results, times):
+    params_t = {}
+    times = np.linspace(0.75, 1, 15)
+    for ana in results:
+        ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
+        p = [dist_fit(ana.rho, exponential, t, p0=1)[0] for t in ana_times]
+        params_t[ana.p] = [k[0] for k in p]
+
+    for k in params_t:
+        print(k, np.mean(params_t[k]), np.var(params_t[k]))
+
 def gaussian(t, a, b):
     return (1/(b*np.sqrt(2*np.pi))) * np.exp(-0.5 * ((t-a)/b)**2)
 
@@ -144,29 +156,32 @@ def dist_fit(rho, fit, t, p0=None):
 
     return popt, pcov, x_max, x_min
 
-def plot_dist_scaled(ana, velocity, times, x_max, D=1):
-    f, ax = plt.subplots(1, 1, figsize=(12,8))
-    rho = ana.rho
-    ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-    xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
-
+def plot_dist_scaled_p(ana_list, velocity, t, x_max, x_0, D, save=False, name=""):
     x_min = 1
-    for i,t in enumerate(ana_times):
-        d = D if isinstance(D, numbers.Number) else D[i]
-        scaled_x = (xrange-velocity*t)/np.sqrt(d*t)
-        ax.plot(scaled_x, np.sqrt(d*t)*rho[t, x_min : x_max], label='t_{}={}'.format(i, t/ana.rho.shape[0]))
+    f, ax = plt.subplots(1, 1, figsize=(12,8))
 
-    plt.title(r'$x \rightarrow \frac{x-vt}{\sqrt{t}}$' + ', p={}'.format(ana.p), fontsize='large')
+    xrange = np.arange(1, x_max, dtype=np.int32)
+
+    
+    for ana, di, ti in zip(ana_list, D, t):
+        ana_time = int(ana.rho.shape[0]*ti)
+        scaled_x = (xrange-velocity[ana.p]*ana_time- x_0)/np.sqrt(di*ana_time)
+        ax.plot(scaled_x, np.sqrt(di*ana_time)*ana.rho[ana_time, x_min : x_max], label='t={}, p={}'.format(ti, ana.p))
+
+    ax.set_xlim(-10, 10)
+    plt.title(r'$x \rightarrow \frac{x-vt}{\sqrt{t}}$' + ' for various p,t={}'.format(ana_list[0].rho.shape[0]), fontsize='large')
     plt.legend()
-    plt.show()
+    # plt.show()
+    if save:
+        plt.savefig("figs/" + name + '.png', format='png')
 
-def fit_scaled_dist(ana, velocity, t_fit, x_max):
+def fit_scaled_dist(ana, velocity, t_fit, x_max, x0):
     xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
     t_fit = int(ana.rho.shape[0]*t_fit)
     x_min = 1
-    scaled_x = (xrange-velocity*t)/np.sqrt(t_fit)
+    scaled_x = (xrange-velocity*t_fit - x0)/np.sqrt(t_fit)
 
-    popt, pcov = curve_fit(dimers_analysis.gaussian, scaled_x, np.sqrt(t_fit)*ana.rho[t_fit, x_min : x_max], bounds = ([-5,0],[5,5]), p0=[1,1])
+    popt, pcov = curve_fit(gaussian, scaled_x, np.sqrt(t_fit)*ana.rho[t_fit, x_min : x_max], bounds = ([-5,0],[5,5]), p0=[1,1])
     return popt[1]
 
 
@@ -291,21 +306,22 @@ def plot_rho(analysis,c=False, t_max=-1):
     plt.legend()
     plt.show()
 
-def plot_dist(ana, times, title='', save=False, name='', site_max=-1):
+def plot_dist(anas, times, title='', save=False, name='', site_max=-1):
     '''
     Parameters:
         times - Iterable of floats between 0 and 1. The relative time steps to plot.
     '''
 
     fig, ax = plt.subplots(1, 1, figsize=(14, 6))
-    ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
+    for ana in anas:
+        ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
 
-    L = ana.rho.shape[1]
-    x = np.arange(1,L if site_max == -1 else site_max, dtype=np.int32)
-    for t, at in zip(times, ana_times):
-        y = ana.rho[at, 1:x[-1]+1]
-        ax.plot(x, y, label='t={}'.format(t))
-        ax.annotate(str(t), (x[np.argmax(y)],y[np.argmax(y)]))
+        L = ana.rho.shape[1]
+        x = np.arange(1,L if site_max == -1 else site_max, dtype=np.int32)
+        for t, at in zip(times, ana_times):
+            y = ana.rho[at, 1:x[-1]+1]
+            ax.plot(x, y, label='p={}, t={}'.format(ana.p, t))
+            ax.annotate(str(t), (x[np.argmax(y)],y[np.argmax(y)]))
     if title:
         ax.set_title(title)
     else:
