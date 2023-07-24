@@ -94,7 +94,7 @@ class Analysis:
     def psis(self, psis):
         # print("setter psis")
         self._psis = []
-        
+
     def analyze(self):
         # print("Analysis start")
         self.analysis = {}

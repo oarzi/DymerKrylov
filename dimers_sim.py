@@ -14,9 +14,11 @@ except ModuleNotFoundError:
 import os
 from dataclasses import dataclass, field
 import argparse
+
+import sys
+
 import numpy as np
 import lzma
-
     
 @dataclass
 class Simulator:
@@ -166,7 +168,7 @@ class Simulator:
     def classical_evolutions_batch_points(self, psi, rho, H_ring, H_hop):
         
         for i in range(self.times):
-            psi = promote_psi_classical(psi, H_ring, H_hop, self.prob)
+            psi = dimers_util.promote_psi_classical(psi, H_ring, H_hop, self.prob)
             charge = dimers_util.defect_density_point(psi)
             rho = np.vstack((rho, np.mean(charge, axis=0)))
 
@@ -225,13 +227,15 @@ def get_experiment_args():
     
     parser_quantum.add_argument("--L", help="System size.", type=int, nargs=1,  required=True)
     parser_quantum.add_argument("--times", help="Number of time steps.", type=int, nargs=1, required=True)
+    parser_quantum.add_argument("--check", help="Number interval checkpoints", type=int, nargs=1,
+                                                   required=True)
     parser_quantum.add_argument("--batch", help="Number of trajectories over which path is averaged.", type=int,
                                            nargs='+', required=False, default=[1])
     parser_quantum.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+', default=[0.5])
     parser_quantum.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
 
     parser_quantum.add_argument("--name", help="File prefix",
-                                           type=str, nargs='+', default='1')
+                                           type=str, nargs='+', default='q_')
     parser_quantum.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int, required=False,
                                            nargs=1, default=[1])
     parser_quantum.add_argument("--batch_procs", help="Number of processes per single running experiment",

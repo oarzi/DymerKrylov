@@ -29,7 +29,7 @@ def get_prefix(mem, cores=1, q='cond-mat', wd_path=''):
 def get_output_files(e='analysis_error.txt', o='analysis_output.txt'):
     output_files = """#$ -o {}
 #$ -e {}
-""".format(e, o)
+""".format(o, e)
     
     return output_files
 
@@ -58,26 +58,30 @@ def get_sge_scripts(args):
         mem = 1 + (arg_parse.L[0]*(max(arg_parse.times) + max(arg_parse.batch))//1000000000)
         cores = 1 + sum([p*b for p,b in zip(arg_parse.procs_sim, arg_parse.batch_procs)])
         while True:
-            name = np.random.randint(1000,10000)
-            
-            file_name = "temp_sge_files/sge" + str(name) + ".sge"
+            name = "sge" + str(np.random.randint(1000,10000))
+            dir_name = "temp_sge_files/{}".format(name)
+            try:
+                os.system("mkdir {}".format(dir_name))
+            except:
+                os.system("rm -r {}/*".format(name))
+
+            file_name = "{}/{}.sge".format(dir_name, arg_parse.experiment + name)
             with open(file_name, mode="w+", newline=os.linesep) as sge_script:
-                name = "cluster{}".format(name)
                 arg = arg.replace(arg_parse.name, arg_parse.name + "_" + name)
-                print(parser.parse_args(arg.split()))
+                
                 
                 pref = get_prefix(mem ,cores=cores, q='cond-mat')
-                outs = get_output_files(e='outputs/analysis_error_{}.txt'.format(name),
-                                        o='outputs/analysis_output_{}.txt'.format(name))
+                outs = get_output_files(e='temp_sge_files/{}/error_{}.txt'.format(name, name[3:]),
+                                        o='temp_sge_files/{}/output_{}.txt'.format(name, name[3:]))
                 multi = get_multi_proc(cores=cores)
-                script = get_commands(arg)
+                command = get_commands(arg)
 
                 sge_script.write(pref)
                 sge_script.write(outs)
                 sge_script.write(multi)
-                sge_script.write(script)
+                sge_script.write(command)
 
-                sge_files.append(file_name)
+                sge_files.append((file_name, arg))
                 
             break
 
@@ -95,9 +99,9 @@ def main(args_list, chdir_path = "", wd_path=''):
     sge_files = get_sge_scripts(args_list)
 
     for job, sge_file in enumerate(sge_files):
-        print("Job {}/{}: ".format(job, len(sge_files)) + sge_file)
-        os.system("chmod u+x {}".format(sge_file))
-        os.system("qsub {}".format(sge_file))
+        print("Job {}/{}: ".format(job + 1, len(sge_files)) + sge_file[0] + "; " + sge_file[1])
+        os.system("chmod u+x {}".format(sge_file[0]))
+        os.system("qsub {}".format(sge_file[0]))
         
         
     return
@@ -117,11 +121,11 @@ if __name__ == '__main__':
     3. Probability example:
         
         p_list = [0.1, 0.01, 0.001, 0.0001, 0.00001]
-        args_list = ["pgate --L 400 --d 30 --times 800 --batch 10000 --p {} --procs_sim 1 --batch_procs 80".format(_p) for _p in p_list]
+        args_list = ["pgate --L 400 --d 30 --times 800 --check {}--batch 10000 --p {} --procs_sim 1 --batch_procs 80".format(_p) for _p in p_list]
         
     4. Quantum:
         times = [50, 200, 1000, 2000, 4000]
-        args_list = ["q --L 34 --d 26 --times {}".format(t) for t in times]        
+        args_list = ["q --L 34 --d 26 --times {} --check{}".format(t) for t in times]        
 
     """
     
@@ -129,14 +133,15 @@ if __name__ == '__main__':
     #args_list3 = ["pgate --L 100 --d 85 --times 500 --check 100 --batch 1000 --p {} --procs_sim 1 --batch_procs 12".format(_p) for _p in p_list3]
     #main(args_list3)
     
-    p_list2 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
-    args_list2 = ["pgate --L 400 --d 300 --times 5000 --check 100 --batch 1000 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list2]
-    main(args_list2)
+    #p_list2 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    #args_list2 = ["pgate --L 400 --d 300 --times 5000 --check 100 --batch 1000 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list2]
+    #main(args_list2)
     
 
-    #p_list1 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
-    #args_list1 = ["pgate --L 800 --d 600 --times 5000 --check 100 --batch 1200 --p {} --procs_sim 1 --batch_procs 20".format(_p) for _p in p_list1]
-    #main(args_list1)
+    p_list = [0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    args_list = ["pgate --L 800 --d 600 --times 5000 --check 100 --batch 1500 --p {} --procs_sim 1 --batch_procs 30".format(_p) for _p in p_list]
+    main(args_list)
 
 
-
+    #args_list = ["q --L 34 --d 30 --times 100 --check 100", "q --L 30 --d 26 --times 100 --check 100", "q --L 26 --d 22 --times 100 --check 100"] 
+    

@@ -1,4 +1,9 @@
 analyses/*
+<<<<<<< HEAD
+figs/*
+outputs/*
+=======
+>>>>>>> f5d1c1e1c6b42964b369e0b38ac61a59754660ce
 Meetings/
 Meetings/*
 analyses/varying_initial_conditions/
