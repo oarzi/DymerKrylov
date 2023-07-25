@@ -139,6 +139,7 @@ def steady_state(results, times):
 
     for k in params_t:
         print(k, np.mean(params_t[k]), np.var(params_t[k]))
+    return params_t
 
 def gaussian(t, a, b):
     return (1/(b*np.sqrt(2*np.pi))) * np.exp(-0.5 * ((t-a)/b)**2)
