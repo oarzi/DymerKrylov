@@ -6,12 +6,12 @@
 #$ -M ofir.arzi@tum.de  # put your email address here!
 #$ -m ea  # n="NO_MAIL", a="MAIL_AT_ABORT", e="MAIL_AT_EXIT", combination `-m ae` is allowed
 
-#$ -pe smp 38
+#$ -pe smp 1
 #$ -R y
 #$ -b y
 #$ -q cond-mat-short
 
-#$ -o analyses/analysis_report__output.txt
+#$ -o analyses/analysis_report_ssoutput.txt
 #$ -e analyses/analysis_report_error.txt
 
 
