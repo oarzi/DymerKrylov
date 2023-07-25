@@ -61,7 +61,7 @@ def varying_initial_conditions(args):
                              
 def quantum(args):
     print("--- ===   Quantum simulation   === ---")
-    L_sim, times_sim, check, d_sim, name = args.L[0], args.times[0], args.check[0], args.d[0], args.name 
+    L_sim, times_sim, check, d_sim, name, p_gate = args.L[0], args.times[0], args.check[0], args.d[0], args.name, args.p[0]
     
     dir_name = "quantum/L{}_d{}/".format(L_sim, d_sim)
     
@@ -70,7 +70,8 @@ def quantum(args):
     title = "Evolution for quantum - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
     
-    simulator = dimers_sim.QuantumSimulator(local = False, L=L_sim, times=times_sim, check_interval=check, d=d_sim, file_name=file_name, dir_name="analyses/" + dir_name)
+    simulator = dimers_sim.QuantumSimulator(local = False, L=L_sim, times=times_sim, check_interval=check, d=d_sim,
+                                            prob=p_gate, file_name=file_name, dir_name="analyses/" + dir_name)
     
     results =  [simulator.simulate()]
 
@@ -85,15 +86,15 @@ def quantum(args):
     
 def varying_gate_probabilities(args):
     print("--- ===   varying_gate_probabilities   === ---")
-    L_sim, times_sim, check, d_sim, p_gate, batch_size, procs_sim, batch_procs_num, name = args.L[0], args.times[0], args.check[0], args.d[0], args.p, args.batch[0], args.procs_sim[0], args.batch_procs[0], args.name
+    L_sim, times_sim, check, d_sim, p_gate, batch_size, procs_sim, batch_procs_num, name = args.L[0], args.times[0], args.check[0], args.d[0], args.p[0], args.batch[0], args.procs_sim[0], args.batch_procs[0], args.name
 
     dir_name = "varying_p/L{}_d{}/".format(L_sim, d_sim)
 
-    file_name = name + '_experiment_L{}_d{}_p{}'.format(L_sim, d_sim,p_gate[0])
+    file_name = name + '_experiment_L{}_d{}_p{}'.format(L_sim, d_sim,p_gate)
 
     title = "Evolution for initial position - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     
-    simulator = dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, check_interval=check, d=d_sim, prob=p_gate[0], batch=batch_size, batch_procs_num = batch_procs_num, dir_name="analyses/" + dir_name, file_name=file_name)
+    simulator = dimers_sim.Simulator(local = False, L=L_sim, times=times_sim, check_interval=check, d=d_sim, prob=p_gate, batch=batch_size, batch_procs_num = batch_procs_num, dir_name="analyses/" + dir_name, file_name=file_name)
   
     results = [simulator.simulate()] 
 

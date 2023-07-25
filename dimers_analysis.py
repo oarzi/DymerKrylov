@@ -10,6 +10,7 @@ import sys
 import numpy as np
 import subprocess
 import lzma
+from scipy.constants import golden
 
 @dataclass
 class Experiment: 
@@ -131,7 +132,6 @@ def analyze_old(rho):
 
 def steady_state(results, times):
     params_t = {}
-    times = np.linspace(0.75, 1, 15)
     for ana in results:
         ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
         p = [dist_fit(ana.rho, exponential, t, p0=1)[0] for t in ana_times]
@@ -139,6 +139,7 @@ def steady_state(results, times):
 
     for k in params_t:
         print(k, np.mean(params_t[k]), np.var(params_t[k]))
+    return params_t
 
 def gaussian(t, a, b):
     return (1/(b*np.sqrt(2*np.pi))) * np.exp(-0.5 * ((t-a)/b)**2)
@@ -150,7 +151,7 @@ def inv_pol(t, a):
     return a*np.exp(-a*t)
 
 def dist_fit(rho, fit, t, p0=None):
-    x_max, x_min = np.argwhere(rho[t,1:] != 0)[-1][0]+5, np.argwhere(rho[t,1:] != 0)[0][0] - 5
+    x_max, x_min = np.argwhere(rho[t,1:] != 0)[-1][0], np.argwhere(rho[t,1:] != 0)[0][0] - 5
     x_max, x_min = min([x_max, rho.shape[1]]), max([x_min, 1])
     popt, pcov = curve_fit(fit, np.arange(x_min, x_max), rho[t,x_min:x_max], bounds=(0, x_max),p0=p0)
 
@@ -212,11 +213,13 @@ def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False,
         plt.plot(xrange, y, label="Simulation L={}".format(str(ana.L)))
         plt.plot(xrange, f(xrange, *popt_t),label="{} fit L={}, {}".format(label, str(ana.L), *popt_t))
         plt.title("p={}, L={}, d={}, t={}".format(ana.p, ana.L, ana.d, t[0]))
-        plt.legend()
         if log_scale_x:
             plt.xscale("log", base=log_scale_x)
         if log_scale_y:
             plt.yscale("log", base=log_scale_y)
+    if f == exponential:
+        plt.plot(xrange, np.log(golden)*np.exp(-np.log(golden)*xrange), label=r"$\log \phi e^{- \log \phi \times x}$")
+    plt.legend()
     plt.tight_layout()
     plt.show()
     return res

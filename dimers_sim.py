@@ -100,11 +100,9 @@ class Simulator:
     
     def initialize(self):
         if self.from_file:
-            search = "L{}_d{}_p{}".format(self.L, self.d, self.prob)
-            path = next(x for x in os.listdir(self.dir_name) if search in x)
-            with open(self.dir_name  + path, 'rb') as f:
-                ana = pickle.load(f)
-                rho, psis = ana.rho, ana.psis
+            with lzma.open(self.dir_name + self.file_name + "_psi.pickle", 'rb') as f:
+                psis = pickle.load(f)               
+            rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
             psis = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
             rho = np.mean(dimers_util.defect_density_point(psis[0]), axis=0).reshape((1, self.L))
@@ -178,11 +176,9 @@ class Simulator:
 class QuantumSimulator(Simulator):
     def initialize(self):
         if self.from_file:
-            search = "L{}_d{}_p{}".format(self.L, self.d, self.prob)
-            path = next(x for x in os.listdir(self.dir_name) if search in x)
-            with open(self.dir_name  + path, 'rb') as f:
-                ana = pickle.load(f)
-                rho, psi = ana.rho, ana.psis
+            with lzma.open(self.dir_name + self.file_name + "_psi.pickle", 'rb') as f:
+                psis = pickle.load(f)               
+            rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
             configs = dimers_util.load_configs(self.L)
             psi = dimers_util.get_initial_config_point_quantum(self.L, self.d, configs)
@@ -203,8 +199,8 @@ class QuantumSimulator(Simulator):
         H_ring, H_hop, configs = H
 
         for i in range(self.times):
-            psi = expm_multiply(-1j*H_ring, psi)
-            psi = expm_multiply(-1j*H_hop, psi)
+            psi = expm_multiply(-1j*(1 - self.prob)*H_ring, psi)
+            psi = expm_multiply(-1j*self.prob*H_hop, psi)
             rho = np.vstack((rho, dimers_util.defect_density_points_quantum(configs,psi)))
             
         return rho, psi

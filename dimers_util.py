@@ -164,12 +164,12 @@ def test_charge(psi, i):
         raise SystemExit("Charge is not conserved")
 
 
-def promote_psi_classical(psi, H_ring, H_hop, prob_ring):
+def promote_psi_classical(psi, H_ring, H_hop, prob_hop):
     rng = np.random.default_rng()
     shift = rng.choice([0, 1, 2], 1)
     indices = np.arange(shift + 0, psi.shape[1]//3-1, 3)
     rng.shuffle(indices)
-    gates_i = rng.choice([True, False], size=(indices.size, psi.shape[0]), p =[prob_ring, 1 - prob_ring])
+    gates_i = rng.choice([True, False], size=(indices.size, psi.shape[0]), p =[1 - prob_hop, 1 - prob_hop])
                 
     for i, row_gate in zip(indices, gates_i):
         rings_i = np.nonzero(row_gate)
