@@ -116,7 +116,9 @@ if __name__ == '__main__':
     Experiments = {'bs' : varying_batch_size, "ic" : varying_initial_conditions, 'pgate' : varying_gate_probabilities, 'q' : quantum}
     dir_names = {'bs' : 'varying_batch_size', "ic" : 'varying_initial_conditions', 'pgate' : 'varying_p', 'q' : 'quantum'}
     try:
+        os.mkdir("analyses/{}/L{}_d{}psis/".format(dir_names[args.experiment], args.L[0], args.d[0]))
         os.mkdir("analyses/{}/L{}_d{}/".format(dir_names[args.experiment], args.L[0], args.d[0]))
+        
     except:
         print("Folder exists")
     try:
