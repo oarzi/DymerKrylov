@@ -190,8 +190,8 @@ def fit_velocity(t, a, b):
     return  a*t +b
 def extract_velocity(ana ,t_min, t_max):
     
-    bound_low = [100*(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max])), ana.analysis['Mean'][t_min]/10 ]
-    bound_up = [0, ana.analysis['Mean'][t_min]*10]
+    bound_low = [(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max]))/(np.argmin(ana.analysis['Mean']) - np.argmax(ana.analysis['Mean'])), 0]
+    bound_up = [0, ana.analysis['Mean'][t_min]+1]
 
     popt, pcov = curve_fit(fit_velocity, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max], bounds=(bound_low, bound_up),p0=(-0.5, ana.analysis['Mean'][t_min]))
     return popt, pcov

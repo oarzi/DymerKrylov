@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # Load date
     ana_path = 'analyses/varying_p/'
     
-    exp400_path = 'L400_d300original/'
+    exp400_path = 'L400_d300/'
     #dir_paths = os.listdir(ana_path+exp400_path)
     #for idx, path in enumerate(dir_paths):
     #    with open(ana_path + exp400_path + path, 'rb') as f:

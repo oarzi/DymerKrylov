@@ -11,7 +11,7 @@
 #$ -b y
 #$ -q cond-mat-short
 
-#$ -o analyses/analysis_report_ssoutput.txt
+#$ -o analyses/analysis_report_output.txt
 #$ -e analyses/analysis_report_error.txt
 
 
