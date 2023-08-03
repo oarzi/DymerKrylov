@@ -191,21 +191,16 @@ def fit_velocity(t, a, b):
     return  a*t +b
 def extract_velocity(ana ,t_min, t_max):
     
-    bound_low = [(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max]))/(np.argmin(ana.analysis['Mean']) - np.argmax(ana.analysis['Mean'])), 0]
+    bound_low = [(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max]))/(np.argmin(ana.analysis['Mean'][t_min:t_max]) - np.argmax(ana.analysis['Mean'][t_min:t_max])), 0]
     bound_up = [0, ana.analysis['Mean'][t_min]+1]
     
-<<<<<<< Updated upstream
     print(bound_low)
     print(bound_up)
     p0 = (bound_low[0]/2, ana.analysis['Mean'][t_min])
     print(p0)
-    popt, pcov = curve_fit(fit_velocity, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max],
-                           bounds=(bound_low, bound_up),p0=p0)
-=======
-    p0 = (bound_low[0]/2, ana.analysis['Mean'][t_min])
+
     popt, pcov = curve_fit(fit_velocity, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max],
                            bounds=(bound_low, bound_up), p0=p0)
->>>>>>> Stashed changes
     return popt, pcov
 
 
