@@ -5,25 +5,55 @@ import numpy as np
 import os
 import lzma
 
-if __name__ == '__main__':
+def test():
+    # Load date
+    ana_path = 'analyses/varying_p/'
     
+    exp30_path = 'L30_d25'
+    exp30 = dimers_analysis.Experiment.load(dir_path=ana_path + exp30_path, file_name= "exp_" + exp30_path[:-1])
+
+    # Velocity
+    t_min = 0
+    t_max30 = 100
+    v30 = {ana.p : dimers_analysis.extract_velocity(ana ,0, t_max30)[0][0] for ana in exp30.results}
+
+    
+    plist = [ana.p for ana in exp30.results]
+    vlist30 = [v400[ana.p] for ana in exp30.results]
+    plt.plot(plist, vlist30, label="v(p), L=30")
+    plt.legend()
+    plt.savefig("figs/compare_v30.png", format='png')
+    
+    # Scaled distributions collapse  
+    t = 0.01
+    x_max = 800
+    x0 = 600
+    res_list = exp30.results
+    D_list_30 = [dimers_analysis.fit_scaled_dist(ana, v30[ana.p], t*v30[0.15]/v30[ana.p], ana.L, x0)  for i,ana in enumerate(res_list)]
+    
+    name800 = "L30d25_scaled_all"
+    dimers_analysis.plot_dist_scaled_p(res_list, v30 , [t*v30[0.14]/v30[ana.p] for ana in res_list] , x_max, x0,
+                                        D_list_30, save=True, name=name30)
+
+    # Steady states
+                
+    times = np.linspace(0.75, 1, 15)
+    exp30_steady_state = dimers_analysis.steady_state(exp30.results, times)
+    print(exp30_steady_state)
+
+                
+    with open("analyses/varying_p/steady_state_data_test.pickle", "wb") as f:
+            pickle.dump((exp30_steady_state, ), f)
+                
+    print("End test")
+    return
+
+
+def compare400800():
     # Load date
     ana_path = 'analyses/varying_p/'
     
     exp400_path = 'L400_d300/'
-    #dir_paths = os.listdir(ana_path+exp400_path)
-    #for idx, path in enumerate(dir_paths):
-    #    with open(ana_path + exp400_path + path, 'rb') as f:
-    #        print("Loading {}/{}: {} ...".format(idx + 1, len(dir_paths) ,path))
-    #        ana = pickle.load(f)
-    #        print(type(ana))
-    #        if isinstance(ana, dimers_analysis.Analysis):
-    #            print("Analysis loaded")
-    #            print(ana.p, ana.rho.shape)
-    #            ana_small = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
-     #                                   p=ana.p, rho=ana.rho, psis=[], file_name = ana.file_name, 
-      #                                  dir_name= ana.dir_name)
-       #         ana_small.save()  
     exp400 = dimers_analysis.Experiment.load(dir_path=ana_path + exp400_path, file_name= "exp_" + exp400_path[:-1])
     
     exp800_path = 'L800_d600/'
@@ -93,3 +123,6 @@ if __name__ == '__main__':
             pickle.dump((exp800_steady_state, exp400_steady_state), f)
                 
 
+
+if __name__ == '__main__':
+    test()
