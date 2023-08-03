@@ -100,7 +100,7 @@ class Simulator:
     
     def initialize(self):
         if self.from_file:
-            with lzma.open(self.dir_name + self.file_name + "_psi.pickle", 'rb') as f:
+            with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
                 psis = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
@@ -138,7 +138,7 @@ class Simulator:
 
             analysis.rho = rho
             analysis.save()  
-            with lzma.open(self.dir_name + self.file_name + "_psi.pickle", "wb", preset=9) as f:
+            with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", "wb", preset=9) as f:
                 pickle.dump(psi, f)
             
         print("Finished id {}: L =  {}, # times = {}, d = {}, # batch = {} | {}".format(os.getpid(), self.L,
@@ -176,7 +176,7 @@ class Simulator:
 class QuantumSimulator(Simulator):
     def initialize(self):
         if self.from_file:
-            with lzma.open(self.dir_name + self.file_name + "_psi.pickle", 'rb') as f:
+            with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
                 psis = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:

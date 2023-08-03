@@ -65,7 +65,7 @@ def quantum(args):
     
     dir_name = "quantum/L{}_d{}/".format(L_sim, d_sim)
     
-    file_name = name + '_q_experiment_L{}_d_t{}'.format(L_sim, d_sim, times_sim)
+    file_name = name + '_q_experiment_L{}_d{}_p{}'.format(L_sim, d_sim, p_gate)
     
     title = "Evolution for quantum - L={}, # times={}, d={}".format(L_sim, times_sim, d_sim)
     

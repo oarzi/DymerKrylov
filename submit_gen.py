@@ -133,16 +133,23 @@ if __name__ == '__main__':
     #args_list3 = ["pgate --L 100 --d 85 --times 500 --check 100 --batch 1000 --p {} --procs_sim 1 --batch_procs 12".format(_p) for _p in p_list3]
     #main(args_list3)
     
-    p_list2 = [0, 0.0001, 0.001, 0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
-    args_list2 = ["pgate --L 400 --d 300 --times 5000 --check 100 --batch 1500 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list2]
-    main(args_list2)
+    #p_list1 = [0, 0.0001, 0.001, 0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    #p_list1 = [0.3]
+    #args_list1 = ["pgate --L 400 --d 300 --times 5000 --check 100 --batch 1500 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list1]
+    #args_list1 = args_list1 + ["pgate --L 400 --d 300 --times 5000 --check 150 --batch 1500 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list1[:3]]
+    #args_list1 = args_list1 + ["pgate --L 400 --d 300 --times 5000 --check 200 --batch 1500 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list1[25:]]
+    
+    #main(args_list1)
     
 
-    p_list1 = [0, 0.0001, 0.001, 0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
-    args_list1 = ["pgate --L 800 --d 600 --times 5000 --check 100 --batch 2000 --p {} --procs_sim 1 --batch_procs 34".format(_p) for _p in p_list1]
-    main(args_list1)
+    #p_list2 = [0, 0.0001, 0.001, 0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    #args_list2 = ["pgate --L 800 --d 600 --times 5000 --check 100 --batch 1500 --p {} --procs_sim 1 --batch_procs 36".format(_p) for _p in p_list2[3:25]]
+    #args_list2 = args_list2 + ["pgate --L 800 --d 600 --times 5000 --check 150 --batch 2000 --p {} --procs_sim 1 --batch_procs 36".format(_p) for _p in p_list2[:3]]
+    #args_list2 = args_list2 + ["pgate --L 800 --d 600 --times 5000 --check 300 --batch 2000 --p {} --procs_sim 1 --batch_procs 36".format(_p) for _p in p_list2[25:]]
+    #main(args_list2)
 
-    p_list3 = [0, 0.0001, 0.001, 0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
-    args_list3 = ["q --L 30 --d 26 --times 100 --check 100 --p {}".format(_p) for _p in p_list1] 
+    #p_list3 = [0, 0.0001, 0.001, 0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    #p_list3 = [0.3, 0.0001, 0.03, 0.93, 0.8, 0.9]    
+    args_list3 = ["q --L 30 --d 26 --times 100 --check 100 --p {}".format(_p) for _p in [0]] 
     main(args_list3)
     
