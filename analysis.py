@@ -79,7 +79,7 @@ def compare400800():
     x_max = 800
     x0 = 600
     res_list = exp800.results
-    D_list_800 = [dimers_analysis.fit_scaled_dist(ana, v800[ana.p], t*v800[0.14]/v800[ana.p], ana.L, x0)  for i,ana in enumerate(res_list)]
+    D_list_800 = [dimers_analysis.fit_scaled_dist(ana, v800[ana.p], min(t*v800[0.14]/v800[ana.p], ana.rho.shape[0]-1), ana.L, x0)  for i,ana in enumerate(res_list)]
     
     name800 = "L800d600_scaled_all"
     dimers_analysis.plot_dist_scaled_p(res_list, v800 , [t*v800[0.14]/v800[ana.p] for ana in res_list] , x_max, x0,
