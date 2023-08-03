@@ -101,14 +101,14 @@ class Simulator:
     def initialize(self):
         if self.from_file:
             with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
-                psis = pickle.load(f)               
+                psi = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
-            psis = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
+            psi = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
             rho = np.mean(dimers_util.defect_density_point(psis[0]), axis=0).reshape((1, self.L))
             
         print(rho.shape)
-        return rho, psis
+        return rho, psi
     
     
     def get_H(self):
@@ -177,7 +177,7 @@ class QuantumSimulator(Simulator):
     def initialize(self):
         if self.from_file:
             with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
-                psis = pickle.load(f)               
+                psi = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
             configs = dimers_util.load_configs(self.L)
