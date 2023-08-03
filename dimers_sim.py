@@ -177,7 +177,7 @@ class QuantumSimulator(Simulator):
     def initialize(self):
         if self.from_file:
             with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
-                psis = pickle.load(f)               
+                psi = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
             configs = dimers_util.load_configs(self.L)
