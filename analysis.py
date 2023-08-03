@@ -19,20 +19,20 @@ def test():
 
     
     plist = [ana.p for ana in exp30.results]
-    vlist30 = [v400[ana.p] for ana in exp30.results]
+    vlist30 = [v30[ana.p] for ana in exp30.results]
     plt.plot(plist, vlist30, label="v(p), L=30")
     plt.legend()
     plt.savefig("figs/compare_v30.png", format='png')
     
     # Scaled distributions collapse  
     t = 0.01
-    x_max = 800
-    x0 = 600
+    x_max = 30
+    x0 = 25
     res_list = exp30.results
     D_list_30 = [dimers_analysis.fit_scaled_dist(ana, v30[ana.p], t*v30[0.15]/v30[ana.p], ana.L, x0)  for i,ana in enumerate(res_list)]
     
-    name800 = "L30d25_scaled_all"
-    dimers_analysis.plot_dist_scaled_p(res_list, v30 , [t*v30[0.14]/v30[ana.p] for ana in res_list] , x_max, x0,
+    name30 = "L30d25_scaled_all"
+    dimers_analysis.plot_dist_scaled_p(res_list, v30 , [t*v30[0.15]/v30[ana.p] for ana in res_list] , x_max, x0,
                                         D_list_30, save=True, name=name30)
 
     # Steady states
@@ -79,7 +79,9 @@ def compare400800():
     x_max = 800
     x0 = 600
     res_list = exp800.results
+
     D_list_800 = [dimers_analysis.fit_scaled_dist(ana, v800[ana.p], min(t*v800[0.14]/v800[ana.p], ana.rho.shape[0] - 1), ana.L, x0)  for i,ana in enumerate(res_list)]
+
     
     name800 = "L800d600_scaled_all"
     dimers_analysis.plot_dist_scaled_p(res_list, v800 , [t*v800[0.14]/v800[ana.p] for ana in res_list] , x_max, x0,
@@ -125,4 +127,4 @@ def compare400800():
 
 
 if __name__ == '__main__':
-    test()
+    compare400800()
