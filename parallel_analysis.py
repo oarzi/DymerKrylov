@@ -61,7 +61,7 @@ def varying_initial_conditions(args):
                              
 def quantum(args):
     print("--- ===   Quantum simulation   === ---")
-    L_sim, times_sim, check, d_sim, name, p_gate = args.L[0], args.times[0], args.check[0], args.d[0], args.name, args.p[0]
+    L_sim, times_sim, check, d_sim, name, p_gate, from_file = args.L[0], args.times[0], args.check[0], args.d[0], args.name, args.p[0], args.file[0]
     
     dir_name = "quantum/L{}_d{}/".format(L_sim, d_sim)
     
@@ -71,7 +71,8 @@ def quantum(args):
     
     
     simulator = dimers_sim.QuantumSimulator(local = False, L=L_sim, times=times_sim, check_interval=check, d=d_sim,
-                                            prob=p_gate, file_name=file_name, dir_name="analyses/" + dir_name)
+                                            prob=p_gate, file_name=file_name, dir_name="analyses/" + dir_name,
+                                            from_file=from_file)
     
     results =  [simulator.simulate()]
 

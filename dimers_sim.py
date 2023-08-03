@@ -236,6 +236,8 @@ def get_experiment_args():
                                            nargs=1, default=[1])
     parser_quantum.add_argument("--batch_procs", help="Number of processes per single running experiment",
                                            type=int, nargs='+', default=[1])
+    parser_quantum.add_argument("--file", help="load from file",
+                                           type=bool, nargs=1, default=False)
     
     
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
