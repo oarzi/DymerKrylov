@@ -39,8 +39,8 @@ class Experiment:
                         exp_files.append(_e.results[0])
                     if isinstance(_e, Analysis):
                         print("Analysis loaded")
-                        _e.psis = []
                         _e.analyze()
+                        print(_e.p, _e.rho.shape)
                         exp_files.append(_e)
             except Exception as e:
                 print(e)
@@ -72,7 +72,9 @@ class Analysis:
     @classmethod
     def load(cls, path):
         with lzma.open(path, 'rb') as f:
-            return pickle.load(f)
+            ana = pickle.load(f)
+            print(ana.p, ana.rho.shape)
+            return pana
                 
     @property
     def rho(self):
@@ -103,7 +105,7 @@ class Analysis:
         sites = np.arange(1, self.rho.shape[1]).reshape(1, self.rho.shape[1] - 1)
         weigths_avg = np.repeat(sites, self.rho.shape[0], axis=0)
         self.analysis['Mean'] = np.average(weigths_avg, axis=1,
-                                           weights=self.rho[:, 1:]).reshape(self.rho.shape[0])
+                                           weights=self.rho[:, 1:])
         
         self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -  
                                                    self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1,
@@ -130,15 +132,14 @@ def analyze_old(rho):
     # print("Analysis end")
     return self.analysis
 
-def steady_state(results, times):
+def steady_state(results, times, site_max=-1):
     params_t = {}
     for ana in results:
+        site_max = ana.rho.shape[0] if site_max == -1 else site_max
         ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-        p = [dist_fit(ana.rho, exponential, t, p0=1)[0] for t in ana_times]
-        params_t[ana.p] = [k[0] for k in p]
-
-    for k in params_t:
-        print(k, np.mean(params_t[k]), np.var(params_t[k]))
+        p = [dist_fit(ana.rho[:, 1:site_max], exponential, t, p0=1)[0] for t in ana_times]
+        params_t[ana.p] = np.mean([k[0] for k in p])
+        
     return params_t
 
 def gaussian(t, a, b):
@@ -151,7 +152,7 @@ def inv_pol(t, a):
     return a*np.exp(-a*t)
 
 def dist_fit(rho, fit, t, p0=None):
-    x_max, x_min = np.argwhere(rho[t,1:] != 0)[-1][0], np.argwhere(rho[t,1:] != 0)[0][0] - 5
+    x_max, x_min = np.argwhere(rho[t] != 0)[-1][0], np.argwhere(rho[t] != 0)[0][0] - 5
     x_max, x_min = min([x_max, rho.shape[1]]), max([x_min, 1])
     popt, pcov = curve_fit(fit, np.arange(x_min, x_max), rho[t,x_min:x_max], bounds=(0, x_max),p0=p0)
 
@@ -204,7 +205,7 @@ def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False,
     res = {}
     for i, t in enumerate(zip(times, ana_times)):
         plt.subplot(100*len(times) + 10 +i+1)
-        popt_t, pcov_t, x_max, x_min = dist_fit(ana.rho[:, :site_max], f, t[1], p0)
+        popt_t, pcov_t, x_max, x_min = dist_fit(ana.rho[:, 1:site_max], f, t[1], p0)
         print(x_min, x_max)
         res[t[0]]= (popt_t, pcov_t)
         print("Errors: {}".format(np.sqrt(np.diag(pcov_t))))
