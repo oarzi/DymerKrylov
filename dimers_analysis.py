@@ -25,7 +25,7 @@ class Experiment:
             print("Saved at {}".format(self.dir_name + "/" + self.file_name))
     
     @classmethod
-    def load(cls, dir_path, file_name, description="" ):
+    def load(cls, dir_path, description="" ):
         exp_files = []
         dir_paths = os.listdir(dir_path)
         for idx, path in enumerate(dir_paths):
@@ -46,8 +46,8 @@ class Experiment:
                 print(e)
                 print("Failed: " + dir_path + "/" +path)
 
-        experiment = Experiment(sorted(exp_files, key= lambda e: e.p), file_name
-                                ,"analyses/good", description=description)
+        experiment = Experiment(sorted(exp_files, key= lambda e: e.p),
+                                "analyses/good", description=description)
         return experiment
 
 @dataclass
@@ -138,7 +138,7 @@ def steady_state(results, times, site_max=-1):
     for ana in results:
         site_max = ana.rho.shape[1] if site_max == -1 else site_max
         ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-        p = [curve_fit(exponential, x_range, ana.rho[t,1:site_max], bounds=(0, 2),p0=0.01) for t in ana_times]
+        p = [curve_fit(exponential, x_range , ana.rho[t,1:site_max], bounds=(0, 2),p0=0.1) for t in ana_times]
         # p = [dist_fit(ana.rho[:, 1:site_max], exponential, t, p0=1, bounds=(0, 3))[0] for t in ana_times]
         params_t[ana.p] = np.mean([k[0] for k in p])
         
@@ -197,11 +197,8 @@ def extract_velocity(ana ,t_min, t_max):
     bound_low[0] = -1 if np.isnan(bound_low[0]) else bound_low[0]
     bound_up = [0, ana.analysis['Mean'][t_min]+1]
     
-    # print(bound_low)
-    # print(bound_up)
     p0 = (bound_low[0]/2, ana.analysis['Mean'][t_min])
     
-    # print(p0)
     popt, pcov = curve_fit(fit_velocity, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max],
                            bounds=(bound_low, bound_up), p0=p0)
 

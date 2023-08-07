@@ -3,6 +3,7 @@ Anaytics/*
 figs/*
 outputs/*
 Meetings/*
+papers/*
 *.dat
 *.ipynb
 *.ipynb_checkpoints

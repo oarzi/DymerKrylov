@@ -1,5 +1,6 @@
 import dimers_analysis
-
+import os
+import numpy as np
 def split_files(dir_path):
     dir_paths = os.listdir(dir_path)
     for idx, path in enumerate(dir_paths):
@@ -7,23 +8,31 @@ def split_files(dir_path):
         ana = dimers_analysis.Analysis.load(dir_path + path)
         if isinstance(ana, dimers_analysis.Analysis):
             print("Analysis loaded")
-            ana_small = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
-                                        p=ana.p, rho=ana.rho[::6], psis=[], file_name = ana.file_name + "small", 
-                                        dir_name= dir_path[:-1] + "small/")
-            ana_small.save()
-            del ana_small
+            
             where50 = np.argwhere(ana.analysis['Mean'] < 50).T[0]
             if (where50.size > 0):
                 ana_before = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
-                                            p=ana.p, rho=ana.rho[:where50[0]], psis=[], file_name = ana.file_name + "before", 
-                                            dir_name= dir_path[:-1] + "before/")
+                                                      p=ana.p, rho=ana.rho[:where50[0]], psis=[],
+                                                      file_name = ana.file_name + "before",
+                                                      dir_name= dir_path[:-1] + "before/")
                 ana_before.save()
                 del ana_before
-                
+            else:
+                T_before = int(0.1*ana.rho.shape[0])
+                ana_before = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
+                                                      p=ana.p, rho=ana.rho[:T_before], psis=[],
+                                                      file_name = ana.file_name + "before",
+                                                      dir_name= dir_path[:-1] + "before/")
+                ana_before.save()
+                del ana_before
+
+            where3 = np.argwhere(ana.analysis['Mean'] < 3 ).T[0]
+            if where3.size > 0:
                 L_after = 1 + int(0.2*ana.rho.shape[1])
                 ana_after = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
-                                            p=ana.p, rho=ana.rho[where50[0]:, :L_after], psis=[], file_name = ana.file_name + "after", 
-                                            dir_name= dir_path[:-1] + "after/")
+                                                     p=ana.p, rho=ana.rho[where3[0]:, :L_after], psis=[],
+                                                     file_name = ana.file_name + "after",
+                                                     dir_name= dir_path[:-1] + "after/")
                 ana_after.save()
                 del ana_after
                 
