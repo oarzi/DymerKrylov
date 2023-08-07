@@ -1,4 +1,6 @@
 import dimers_analysis
+import os
+import numpy as np
 
 def split_files(dir_path):
     dir_paths = os.listdir(dir_path)

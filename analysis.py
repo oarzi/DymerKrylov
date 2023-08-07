@@ -53,18 +53,20 @@ def compare400800():
     # Load date
     ana_path = 'analyses/varying_p/'
     
-    exp400_path = 'L400_d300/'
+    exp400_path = 'L400_d300before/'
     exp400 = dimers_analysis.Experiment.load(dir_path=ana_path + exp400_path, file_name= "exp_" + exp400_path[:-1])
     
-    exp800_path = 'L800_d600/'
+    exp800_path = 'L800_d600before/'
     exp800 = dimers_analysis.Experiment.load(dir_path=ana_path +  exp800_path, file_name= "exp_" + exp800_path[:-1])
     
     # Velocity
     t_min = 0
-    t_max400 = 1200
+    t_max400 = 3000
     v400 = {ana.p : dimers_analysis.extract_velocity(ana ,0, t_max400)[0][0] for ana in exp400.results}
-    t_max800 = 3000
+    print(v400)
+    t_max800 = 6000
     v800 = {ana.p : dimers_analysis.extract_velocity(ana ,0, t_max800)[0][0] for ana in exp800.results}
+    print(v800)
     
     plist = [ana.p for ana in exp400.results]
     vlist400 = [v400[ana.p] for ana in exp400.results]
@@ -74,11 +76,18 @@ def compare400800():
     plt.legend()
     plt.savefig("figs/compare_v800_v400.png", format='png')
     
+    exp400_path = 'L400_d300after/'
+    exp400 = dimers_analysis.Experiment.load(dir_path=ana_path + exp400_path, file_name= "exp_" + exp400_path[:-1])
+    
+    exp800_path = 'L800_d600after/'
+    exp800 = dimers_analysis.Experiment.load(dir_path=ana_path +  exp800_path, file_name= "exp_" + exp800_path[:-1])
+    
     # Scaled distributions collapse  
     t = 0.01
     x_max = 800
     x0 = 600
     res_list = exp800.results
+    
 
     D_list_800 = [dimers_analysis.fit_scaled_dist(ana, v800[ana.p], min(t*v800[0.14]/v800[ana.p], ana.rho.shape[0] - 1), ana.L, x0)  for i,ana in enumerate(res_list)]
 

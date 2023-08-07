@@ -99,13 +99,13 @@ class Simulator:
         return 0
     
     def initialize(self):
-        if self.from_file:
+        if self.from_file and os.path.isfile(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle"):
             with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
                 psi = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
             psi = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
-            rho = np.mean(dimers_util.defect_density_point(psis[0]), axis=0).reshape((1, self.L))
+            rho = np.mean(dimers_util.defect_density_point(psi[0]), axis=0).reshape((1, self.L))
             
         print(rho.shape)
         return rho, psi
@@ -175,7 +175,7 @@ class Simulator:
 @dataclass
 class QuantumSimulator(Simulator):
     def initialize(self):
-        if self.from_file:
+        if self.from_file and os.path.isfile(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle"):
             with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
                 psi = pickle.load(f)               
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
@@ -300,5 +300,8 @@ def get_experiment_args():
     
     parser_varying_prob.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='pgate_')
+                                           
+    parser_varying_prob.add_argument("--file", help="load from file",
+                                           type=bool, nargs=1, default=False)
 
     return parser
