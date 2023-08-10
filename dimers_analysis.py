@@ -25,7 +25,7 @@ class Experiment:
             print("Saved at {}".format(self.dir_name + "/" + self.file_name))
     
     @classmethod
-    def load(cls, dir_path, file_name, description="" ):
+    def load(cls, dir_path, description="" ):
         exp_files = []
         dir_paths = os.listdir(dir_path)
         for idx, path in enumerate(dir_paths):
@@ -46,8 +46,8 @@ class Experiment:
                 print(e)
                 print("Failed: " + dir_path + "/" +path)
 
-        experiment = Experiment(sorted(exp_files, key= lambda e: e.p), file_name
-                                ,"analyses/good", description=description)
+        experiment = Experiment(sorted(exp_files, key= lambda e: e.p),
+                                "analyses/good", description=description)
         return experiment
 
 @dataclass
@@ -78,24 +78,18 @@ class Analysis:
                 
     @property
     def rho(self):
-        # print("getter rho")
         return self._rho
     
     @rho.setter
     def rho(self, rho):
-        # print("setter rho")
-        # print(rho)
         self._rho = rho
-        self.analyze()
         
     @property
     def psis(self):
-        # print("getter psis")
         return self._psis
         
     @psis.setter
     def psis(self, psis):
-        # print("setter psis")
         self._psis = []
 
     def analyze(self):
@@ -138,7 +132,7 @@ def steady_state(results, times, site_max=-1):
     for ana in results:
         site_max = ana.rho.shape[1] if site_max == -1 else site_max
         ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-        p = [curve_fit(exponential, x_range, ana.rho[t,1:site_max], bounds=(0, 2),p0=0.01) for t in ana_times]
+        p = [curve_fit(exponential, x_range , ana.rho[t,1:site_max], bounds=(0, 2),p0=0.1) for t in ana_times]
         # p = [dist_fit(ana.rho[:, 1:site_max], exponential, t, p0=1, bounds=(0, 3))[0] for t in ana_times]
         params_t[ana.p] = np.mean([k[0] for k in p])
         
@@ -162,14 +156,14 @@ def dist_fit(rho, fit, t, p0=None):
 
 def plot_dist_scaled_p(ana_list, velocity, t, x_max, x_0, D, save=False, name=""):
     x_min = 1
-    f, ax = plt.subplots(1, 1, figsize=(12,8))
+    f, ax = plt.subplots(1, 1, figsize=(21,14))
 
-    xrange = np.arange(1, x_max, dtype=np.int32)
+    x_range = np.arange(1, x_max, dtype=np.int32)
 
     
     for ana, di, ti in zip(ana_list, D, t):
         ana_time = int(ana.rho.shape[0]*ti)
-        scaled_x = (xrange-velocity[ana.p]*ana_time- x_0)/np.sqrt(di*ana_time)
+        scaled_x = (x_range-velocity[ana.p]*ana_time- x_0)/np.sqrt(di*ana_time)
         ax.plot(scaled_x, np.sqrt(di*ana_time)*ana.rho[ana_time, x_min : x_max], label='t={}, p={}'.format(ti, ana.p))
 
     ax.set_xlim(-10, 10)
@@ -197,11 +191,8 @@ def extract_velocity(ana ,t_min, t_max):
     bound_low[0] = -1 if np.isnan(bound_low[0]) else bound_low[0]
     bound_up = [0, ana.analysis['Mean'][t_min]+1]
     
-    # print(bound_low)
-    # print(bound_up)
     p0 = (bound_low[0]/2, ana.analysis['Mean'][t_min])
     
-    # print(p0)
     popt, pcov = curve_fit(fit_velocity, np.arange(t_min, t_max), ana.analysis['Mean'][t_min:t_max],
                            bounds=(bound_low, bound_up), p0=p0)
 
@@ -273,7 +264,6 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
         # ax[2].set_yscale("log", base=log_scale_y)
     if save and name:
         plt.savefig("figs/" + name + '.png', format='png')
-    plt.show()
     
 def plot_analyses_old(analyses, label, save=False, title='', name=''):
     lwdt = 1

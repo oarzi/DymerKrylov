@@ -133,17 +133,17 @@ if __name__ == '__main__':
     #args_list3 = ["pgate --L 30 --d 25 --times 50 --check 25 --batch 100 --p {} --procs_sim 1 --batch_procs 4".format(_p) for _p in p_list3[::3]]
     #smain(args_list3)
     
-    p_list = [0.01, 0.03, 0.06, 0.1, 0.15, 0.3, 0.5, 0.6, 0.7, 0.75, 0.78, 0.80, 0.82, 0.84, 0.85 ,0.86, 0.87, 0.88, 0.89, 0.90, 0.94, 0.97, 0.99, 0.999, 0.9999, 1]    
+    p_list = [0.80, 0.82, 0.84, 0.85 ,0.86, 0.87, 0.88, 0.89, 0.90]    
 
-    args_list1 = ["pgate --L 400 --d 300 --times 5000 --check 100 --batch 1500 --p {} --procs_sim 1 --batch_procs 24 --file True".format(_p) for _p in p_list]
-    #args_list1 = args_list1 + ["pgate --L 400 --d 300 --times 5000 --check 200 --batch 1500 --p {} --procs_sim 1 --batch_procs 24".format(_p) for _p in p_list[24:]]
+    args_list1 = ["pgate --L 350 --d 300 --times 5000 --check 150 --batch 25000 --p {} --procs_sim 1 --batch_procs 40 --file True".format(_p) for _p in p_list]
+    #args_list1 = args_list1 + ["pgate --L 400 --d 300 --times 5000 --check 300 --batch 1000 --p {} --procs_sim 1 --batch_procs 36".format(_p) for _p in p_list[:4] + p_list[-4:]]
     main(args_list1)
     
 
-    args_list2 = ["pgate --L 800 --d 600 --times 5000 --check 100 --batch 1500 --p {} --procs_sim 1 --batch_procs 36 --file True".format(_p) for _p in p_list]
-    #args_list2 = args_list2 + ["pgate --L 800 --d 600 --times 5000 --check 300 --batch 2000 --p {} --procs_sim 1 --batch_procs 36".format(_p) for _p in p_list[2:]]
+    args_list2 = ["pgate --L 650 --d 600 --times 5000 --check 200 --batch 25000 --p {} --procs_sim 1 --batch_procs 40 --file True".format(_p) for _p in p_list]
+    #args_list2 = args_list2 + ["pgate --L 800 --d 600 --times 5000 --check 400 --batch 1000 --p {} --procs_sim 1 --batch_procs 54".format(_p) for _p in p_list[:4] + p_list[-4:]]
     main(args_list2)
 
-    args_list3 = ["q --L 30 --d 26 --times 200 --check 200 --p {} --file True".format(_p) for _p in p_list]
-    main(args_list3)
+    #args_list3 = ["q --L 30 --d 26 --times 200 --check 200 --p {} --file True".format(_p) for _p in p_list]
+    #main(args_list3)
     
