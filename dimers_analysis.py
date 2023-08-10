@@ -161,14 +161,14 @@ def dist_fit(rho, fit, t, p0=None):
 
 def plot_dist_scaled_p(ana_list, velocity, t, x_max, x_0, D, save=False, name=""):
     x_min = 1
-    f, ax = plt.subplots(1, 1, figsize=(12,8))
+    f, ax = plt.subplots(1, 1, figsize=(21,14))
 
-    xrange = np.arange(1, x_max, dtype=np.int32)
+    x_range = np.arange(1, x_max, dtype=np.int32)
 
     
     for ana, di, ti in zip(ana_list, D, t):
         ana_time = int(ana.rho.shape[0]*ti)
-        scaled_x = (xrange-velocity[ana.p]*ana_time- x_0)/np.sqrt(di*ana_time)
+        scaled_x = (x_range-velocity[ana.p]*ana_time- x_0)/np.sqrt(di*ana_time)
         ax.plot(scaled_x, np.sqrt(di*ana_time)*ana.rho[ana_time, x_min : x_max], label='t={}, p={}'.format(ti, ana.p))
 
     ax.set_xlim(-10, 10)
@@ -269,7 +269,6 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
         # ax[2].set_yscale("log", base=log_scale_y)
     if save and name:
         plt.savefig("figs/" + name + '.png', format='png')
-    plt.show()
     
 def plot_analyses_old(analyses, label, save=False, title='', name=''):
     lwdt = 1
