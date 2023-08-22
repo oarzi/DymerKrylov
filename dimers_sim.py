@@ -124,7 +124,7 @@ class Simulator:
         H = self.get_H()
         rho, psi = self.initialize()
         
-        analysis = dimers_analysis.Analysis(L=self.L, times=self.check_interval*self.times, d=self.d, batch=self.batch,
+        analysis = dimers_analysis.Analysis(L=self.L, times=self.check_interval*self.times, d=self.d, batch=self.batch*batch_procs_num,
                                             p=self.prob, rho=rho, psis=[], file_name = self.file_name, 
                                             dir_name=self.dir_name)
 
