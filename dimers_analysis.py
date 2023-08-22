@@ -73,6 +73,7 @@ class Analysis:
     def load(cls, path):
         with lzma.open(path, 'rb') as f:
             ana = pickle.load(f)
+            ana.analyze()
             print(ana.p, ana.rho.shape)
             return ana
                 
@@ -126,13 +127,14 @@ def analyze_old(rho):
     # print("Analysis end")
     return self.analysis
 
-def steady_state(results, times, site_max=-1):
+def steady_state(results, times, x_min=1, x_max=-1):
     params_t = {}
-    x_range = np.arange(1, site_max)
+    
     for ana in results:
-        site_max = ana.rho.shape[1] if site_max == -1 else site_max
+        site_max = ana.rho.shape[1] if x_max == -1 else x_max
+        x_range = np.arange(x_min, x_max)
         ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-        p = [curve_fit(exponential, x_range , ana.rho[t,1:site_max], bounds=(0, 2),p0=0.1) for t in ana_times]
+        p = [curve_fit(exponential_short, x_range , ana.rho[t,x_range], bounds=(0, 2), p0=0.1) for t in ana_times]
         # p = [dist_fit(ana.rho[:, 1:site_max], exponential, t, p0=1, bounds=(0, 3))[0] for t in ana_times]
         params_t[ana.p] = np.mean([k[0] for k in p])
         
@@ -140,6 +142,9 @@ def steady_state(results, times, site_max=-1):
 
 def gaussian(t, a, b):
     return (1/(b*np.sqrt(2*np.pi))) * np.exp(-0.5 * ((t-a)/b)**2)
+
+def exponential_short(t, a):
+    return a*np.exp(-a*(t - 1))
 
 def exponential(t, a):
     return a*np.exp(-a*t)

@@ -187,7 +187,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
     H_ring = np.array([gate(i, False) for i in range(0, L - 1)], dtype=object)
     H_hop = np.array([gate(i, True, False if i < L -2 else True) for i in range(0, L - 1)], dtype=object)
 
-    states = {state.tobytes() : 0 for state in load_configs('matrices/basis_L{}.dat'.format(L))}
+    states = {state.tobytes() : 0 for state in load_configs(L)}
     psi = get_initial_config_point(L, d, size)
 
     state_vars = []
