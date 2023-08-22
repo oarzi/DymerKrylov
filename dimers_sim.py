@@ -4,7 +4,7 @@ from importlib import reload
 reload(dimers_analysis)
 reload(dimers_util)
 import pickle
-from multiprocessing import Pool, Queue, Process, Semaphore, Manager
+from multiprocessing import Pool, Process, Semaphore, Manager
 from scipy.sparse.linalg import expm_multiply
 import time
 try:
@@ -14,9 +14,6 @@ except ModuleNotFoundError:
 import os
 from dataclasses import dataclass, field
 import argparse
-
-import sys
-
 import numpy as np
 import lzma
     
@@ -40,9 +37,8 @@ class Simulator:
     
     def __post_init__(self):
         if not self.file_name:
-            self.file_name = 'analysis_L{}_d{}_t{}___'.format(self.L, self.d, self.check_interval*self.times,  
-                                                              time.strftime("%Y_%m_%d__%H_%M"))
             self.file_name = 'analysis_L{}_d{}_t{}___'.format(self.L, self.d, self.check_interval*self.times)
+        self.psis_path = self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle"
     
     def progress_bar(self, iterable):
         if self.local:
@@ -100,16 +96,17 @@ class Simulator:
         return 0
     
     def initialize(self):
-        if self.from_file:
-            with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
-                psis = pickle.load(f)               
+        if self.from_file and os.path.isfile(self.psis_path):
+            with lzma.open(self.psis_path, 'rb') as f:
+                psi = pickle.load(f)               
+                print("psi loaded from file {}".format(self.psis_path))
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
-            psis = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
-            rho = np.mean(dimers_util.defect_density_point(psis[0]), axis=0).reshape((1, self.L))
+            psi = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
+            rho = np.mean(dimers_util.defect_density_point(psi[0]), axis=0).reshape((1, self.L))
             
         print(rho.shape)
-        return rho, psis
+        return rho, psi
     
     
     def get_H(self):
@@ -176,9 +173,10 @@ class Simulator:
 @dataclass
 class QuantumSimulator(Simulator):
     def initialize(self):
-        if self.from_file:
-            with lzma.open(self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle", 'rb') as f:
-                psi = pickle.load(f)               
+        if self.from_file and os.path.isfile(self.psis_path):
+            with lzma.open(self.psis_path, 'rb') as f:
+                psi = pickle.load(f)  
+                print("psi loaded from file {}".format(self.psis_path))                    
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
             configs = dimers_util.load_configs(self.L)
@@ -206,15 +204,6 @@ class QuantumSimulator(Simulator):
             
         return rho, psi
     
-def test_rand(n):
-    with Pool(5) as p:
-        c_rhos =  p.map(print_rand, (n for _ in range(n)), chunksize=1)
-        p.close()
-        p.join()
-        
-def print_rand(i):
-    for _ in range(3):
-        print(np.random.randint(0, 100, i))
 
 def get_experiment_args():
     parser = argparse.ArgumentParser(prog='Parallel execution of experiments and their analysis.', allow_abbrev=False)
@@ -301,5 +290,7 @@ def get_experiment_args():
     
     parser_varying_prob.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='pgate_')
+    parser_varying_prob.add_argument("--file", help="load from file",
+                                           type=bool, nargs=1, default=False)
 
     return parser

@@ -1,14 +1,10 @@
 from scipy.optimize import curve_fit
 import pickle
-from scipy.sparse.linalg import expm_multiply
 import matplotlib.pyplot as plt
-import time
 import os
 from dataclasses import dataclass, field
-import argparse
-import sys
 import numpy as np
-import subprocess
+
 import lzma
 from scipy.constants import golden
 
@@ -100,48 +96,29 @@ class Analysis:
         sites = np.arange(1, self.rho.shape[1]).reshape(1, self.rho.shape[1] - 1)
         weigths_avg = np.repeat(sites, self.rho.shape[0], axis=0)
         self.analysis['Mean'] = np.average(weigths_avg, axis=1,
-                                           weights=self.rho[:, 1:])
+                                           weights=self.rho[:, 1:].mean(axis=0))
         
         self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -  
                                                    self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1,
                                                   weights=self.rho[:, 1:])).reshape(self.rho.shape[0])
+        
+        self.analysis['velocity'] = extract_velocity(self ,0, min(self.rho.shape[0], 5000))[0][0]
 
         # print("Analysis end")
         return self.analysis
 
-def analyze_old(rho):
-    # print("Analysis start")
-    # print(self.rho)
-    self.analysis = {}
-    self.analysis['Median'] = 1 + np.sum((np.cumsum(self.rho[:,1:],axis=1)<0.5).astype(int),axis=1).reshape(self.rho.shape[0])
+def steady_state(ana, times, x_min=1, x_max=-1):
 
-    sites = np.arange(1, self.rho.shape[1]).reshape(1, self.rho.shape[1] - 1)
-    weigths_avg = np.repeat(sites, self.rho.shape[0], axis=0)
-    self.analysis['Mean'] = np.average(weigths_avg, axis=1,
-                                       weights=self.rho[:, 1:]).reshape(self.rho.shape[0])
-
-    self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -                        self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1, weights=self.rho[:, 1:])).reshape(self.analysis['Median'].shape)
-
-    self.analysis['speed'] = self.analysis['Mean'][1:] - self.analysis['Mean'][:-1]
-    self.analysis['acc'] = self.analysis['speed'][1:] - self.analysis['speed'][:-1]
-    # print("Analysis end")
-    return self.analysis
-
-def steady_state(results, times, x_min=1, x_max=-1):
-    params_t = {}
-    
-    for ana in results:
-        site_max = ana.rho.shape[1] if x_max == -1 else x_max
-        x_range = np.arange(x_min, x_max)
-        ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
-        p = [curve_fit(exponential_short, x_range , ana.rho[t,x_range], bounds=(0, 2), p0=0.1) for t in ana_times]
-        # p = [dist_fit(ana.rho[:, 1:site_max], exponential, t, p0=1, bounds=(0, 3))[0] for t in ana_times]
-        params_t[ana.p] = np.mean([k[0] for k in p])
+    x_max = ana.rho.shape[1] if x_max == -1 else x_max
+    x_range = np.arange(x_min, x_max)
+    ana_times = ((ana.rho.shape[0] - 1)*times).astype(np.int32)
+    p = [curve_fit(exponential_short, x_range , ana.rho[t,x_range], bounds=(0, 2), p0=0.1) for t in ana_times]
+    const = np.mean([k[0] for k in p])
         
-    return params_t
+    return const
 
 def gaussian(t, a, b):
-    return (1/(b*np.sqrt(2*np.pi))) * np.exp(-0.5 * ((t-a)/b)**2)
+    return (1/(b*np.sqrt(np.pi))) * np.exp(-((t-a)/b)**2)
 
 def exponential_short(t, a):
     return a*np.exp(-a*(t - 1))
@@ -161,30 +138,31 @@ def dist_fit(rho, fit, t, p0=None):
 
 def plot_dist_scaled_p(ana_list, velocity, t, x_max, x_0, D, save=False, name=""):
     x_min = 1
-    f, ax = plt.subplots(1, 1, figsize=(21,14))
+    f, ax = plt.subplots(1, 1, figsize=(14,5))
 
     x_range = np.arange(1, x_max, dtype=np.int32)
-
     
-    for ana, di, ti in zip(ana_list, D, t):
-        ana_time = int(ana.rho.shape[0]*ti)
-        scaled_x = (x_range-velocity[ana.p]*ana_time- x_0)/np.sqrt(di*ana_time)
-        ax.plot(scaled_x, np.sqrt(di*ana_time)*ana.rho[ana_time, x_min : x_max], label='t={}, p={}'.format(ti, ana.p))
-
+    for ana, di in zip(ana_list, D):
+        for ti in t:
+            scaled_x = (x_range-velocity[ana.p]*ti- x_0)/(di*np.sqrt(ti))
+            ax.plot(scaled_x, np.sqrt(ti)*di*ana.rho[ti, x_min : x_max], label='t={}, p={}'.format(ti, ana.p))
+    plt.plot(scaled_x, gaussian(scaled_x, 0, 1), label="exp(0,1)", linewidth=5)
     ax.set_xlim(-10, 10)
     plt.title(r'$x \rightarrow \frac{x-vt}{\sqrt{t}}$' + ' for various p,t={}'.format(ana_list[0].rho.shape[0]), fontsize='large')
     plt.legend()
+    plt.rc('font',**{'size':16})
     # plt.show()
     if save:
         plt.savefig("figs/" + name + '.png', format='png')
 
 def fit_scaled_dist(ana, velocity, t_fit, x_max, x0):
-    xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
-    t_fit = int(ana.rho.shape[0]*t_fit)
+    # xrange = np.arange(-x_max/2, x_max/2-1, dtype=np.int32)
+    x_range = np.arange(1, x_max, dtype=np.int32)
     x_min = 1
-    scaled_x = (xrange-velocity*t_fit - x0)/np.sqrt(t_fit)
+    scaled_x = (x_range-velocity*t_fit - x0)/np.sqrt(t_fit)
 
     popt, pcov = curve_fit(gaussian, scaled_x, np.sqrt(t_fit)*ana.rho[t_fit, x_min : x_max], bounds = ([-5,0],[5,5]), p0=[1,1])
+    print(popt)
     return popt[1]
 
 
@@ -192,7 +170,7 @@ def fit_velocity(t, a, b):
     return  a*t +b
 def extract_velocity(ana ,t_min, t_max):
     
-    bound_low = [(min(ana.analysis['Mean'][t_min:t_max])-max(ana.analysis['Mean'][t_min:t_max]))/(np.argmin(ana.analysis['Mean'][t_min:t_max]) - np.argmax(ana.analysis['Mean'][t_min:t_max])), 0]
+    bound_low = [-10, 0]
     bound_low[0] = -1 if np.isnan(bound_low[0]) else bound_low[0]
     bound_up = [0, ana.analysis['Mean'][t_min]+1]
     
@@ -231,7 +209,7 @@ def plot_fit(ana, times,f, label, p0=None, log_scale_x=False, log_scale_y=False,
     plt.show()
     return res
 
-def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False, t_max=-1):
+def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=False, log_scale_y=False,t_min = 0, t_max=-1):
     lwdt = 1
 
     fig, ax = plt.subplots(1, figsize=(13, 10))
@@ -241,8 +219,10 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
     
     for a in analyses:
         a_label = "{}=".format(label) + str(a.__dict__[label])
-        pos = a.analysis['Mean'][:t_max]
-        ax.plot(pos, label=a_label, linewidth=lwdt)
+        t_max_a = t_max if t_max != -1 else a.analysis['Mean'].size
+        pos = a.analysis['Mean'][t_min:t_max_a]
+        t_range = np.arange(t_min, t_max_a)
+        ax.plot(t_range, pos, label=a_label, linewidth=lwdt)
         x = len(pos)//2
         y = pos[x]
         ax.annotate(a_label, (x,y))
@@ -269,31 +249,6 @@ def plot_analyses(analyses, label, save=False, title='', name='', log_scale_x=Fa
         # ax[2].set_yscale("log", base=log_scale_y)
     if save and name:
         plt.savefig("figs/" + name + '.png', format='png')
-    
-def plot_analyses_old(analyses, label, save=False, title='', name=''):
-    lwdt = 1
-
-    fig, ax = plt.subplots(3, gridspec_kw={'height_ratios':[1, 1, 1]}, figsize=(13, 10))
-    if title:
-        fig.suptitle(title)
-    
-    for a in analyses:
-        ax[0].plot(a['Mean'], label=a[label], linewidth=lwdt)
-    ax[0].legend()
-    ax[0].set_title("Mean position")
-
-    for a in analyses:
-        ax[1].plot(a['speed'], label=a[label], linewidth=lwdt)
-    ax[1].set_title("Speed")
-
-    for a in analyses:
-        ax[2].plot(a['acc'], label=a[label], linewidth=lwdt)
-    ax[2].set_title("acceleration")
-    
-    fig.tight_layout()
-    if save and name:
-        plt.savefig("figs/" + name + '.png', format='png')
-    plt.show()
 
 def plot_rho(analysis,c=False, t_max=-1):
     plt.figure(figsize=[10,12])

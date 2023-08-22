@@ -28,3 +28,4 @@ __pycache__/dimers_analysis.cpython-311.pyc
 __pycache__/dimers_analysis.cpython-39.pyc
 __pycache__/dimers_sim.cpython-311.pyc
 __pycache__/dimers_util.cpython-311.pyc
+*.pyc

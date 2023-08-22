@@ -1,12 +1,9 @@
 from dataclasses import dataclass
 import numpy as np
 import matplotlib.pyplot as plt
-import numpy as np
 import struct
 import scipy.sparse as sparse
 import os
-from numba import int32, boolean
-from numba.experimental import jitclass
 from numba import jit
 
 @jit(nopython=True)
@@ -42,7 +39,7 @@ def defect_density_points_quantum(configs,psi):
 
 def get_initial_config_point(L, defect, size):
     if (defect < 1 or defect >=L):
-        raise ValueError("d= {} provided can't be to close to other defect".format(d))
+        raise ValueError("d= {} provided can't be to close to other defect".format(defect))
 
     c0 = np.zeros((1,3*L), dtype=np.int8)
     c0[0, 0] = 0
@@ -154,12 +151,12 @@ class Gate2:
         return config
     
 def test_charge(psi, i):
-    charge = defect_density_point(config)
+    charge = defect_density_point(psi)
     charge_fail = np.argwhere(np.sum(charge, axis=1) != 2)
     if charge_fail.size > 0:
         print(i)
         print(charge_fail)
-        plot_conf(config[charge_fail])
+        plot_conf(psi[charge_fail])
         print(charge[charge_fail])
         raise SystemExit("Charge is not conserved")
 
@@ -169,13 +166,13 @@ def promote_psi_classical(psi, H_ring, H_hop, prob_hop):
     shift = rng.choice([0, 1, 2], 1)
     indices = np.arange(shift + 0, psi.shape[1]//3-1, 3)
     rng.shuffle(indices)
-    gates_i = rng.choice([True, False], size=(indices.size, psi.shape[0]), p =[1 - prob_hop, prob_hop])
+    gates_i = rng.choice([False, True], size=(indices.size, psi.shape[0]), p =[1 - prob_hop, prob_hop])
                 
     for i, row_gate in zip(indices, gates_i):
-        rings_i = np.nonzero(row_gate)
+        rings_i = np.nonzero(np.logical_not(row_gate))
         psi[rings_i] =  H_ring[i](psi[rings_i])
 
-        hops_i = np.nonzero(np.logical_not(row_gate))
+        hops_i = np.nonzero(row_gate)
         psi[hops_i] = H_hop[i](psi[hops_i])
         
     return psi
@@ -203,13 +200,13 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
         
         if i % interval == 0:
             display.clear_output(wait=True)
+            plt.figure(figsize=(12, 10))
             plt.subplot(3, 1, 1)
             plt.plot(state_vars)
             plt.title("std_i/i*size")
             plt.annotate(str(state_vars[-1]), (i,state_vars[-1]))
             
             plt.subplot(3, 1, 2)
-            charge = defect_density_point(psi)
             plt.plot(rho[1:])
             plt.title("Charge distribution")
             
@@ -221,7 +218,7 @@ def check_detailed_balance(L, times, d, gate, prob_ring=0.5, interval=10, size=1
             plt.show()
     print(len(states))
 
-    return
+    return states
 
 def load_configs(L):
     fn = "matrices/basis_L{}.dat".format(L)
@@ -234,7 +231,9 @@ def load_configs(L):
         a=np.array(np.fromfile(fin, dtype=np.int8))
 
         fin.close()
-        return np.reshape(a,(dim,3*L))
+        configs = np.reshape(a,(dim,3*L))
+        print(configs.shape)
+        return configs
     else:
         print(" load_configs {} -File not found!".format(fn))
         
