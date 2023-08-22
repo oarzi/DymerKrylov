@@ -3,7 +3,7 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-def split_files(dir_path):
+def split_files(dir_path, before_fac=0.1, after_fac=0.85):
     dir_paths = os.listdir(dir_path)
     for path in tqdm(dir_paths):
         loading = True
@@ -26,7 +26,7 @@ def split_files(dir_path):
             #del ana_small
             #print("small saved")
             
-            T_before = min(int(0.1*ana.rho.shape[0]), 12000)
+            T_before = min(int(before_fac*ana.rho.shape[0]), 15000)
             ana_before = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
                                                   p=ana.p, rho=ana.rho[:T_before], psis=[],
                                                   file_name = ana.file_name + "before",
@@ -37,7 +37,7 @@ def split_files(dir_path):
             print("before saved")
 
             L_after = 1 + int(0.2*ana.rho.shape[1])
-            T_after = int(0.75*ana.rho.shape[0])
+            T_after = int(after_fac*ana.rho.shape[0])
             try:
                 ana_after = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
                                                      p=ana.p, rho=ana.rho[T_after:, :L_after], psis=[],
@@ -54,6 +54,6 @@ def split_files(dir_path):
 if __name__ == '__main__':
     dir_path400 = 'analyses/varying_p/L350_d300'
     dir_path800 = 'analyses/varying_p/L650_d600'
-
-    split_files(dir_path400)
-    split_files(dir_path800)
+    
+    split_files(dir_path400, after_fac=0.8)
+    split_files(dir_path800, after_fac=0.8)

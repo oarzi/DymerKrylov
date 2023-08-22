@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     """
     
-    #p_list3 = [0.01, 0.03, 0.06, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.18, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.93, 0.96, 0.99]
+    p_list = [0.01, 0.03, 0.06, 0.09, 0.1, 0.15, 0.3, 0.5, 0.6, 0.7, 0.75, 0.78, 0.8, 0.82, 0.84, 0.85, 0.86, 0.87, 0.88, 0.9, 0.9, 0.94, 0.97, 0.99, 0.999, 0.9999, 1]
     #args_list3 = ["pgate --L 30 --d 25 --times 50 --check 25 --batch 100 --p {} --procs_sim 1 --batch_procs 4".format(_p) for _p in p_list3[::3]]
     #smain(args_list3)
     
@@ -144,6 +144,6 @@ if __name__ == '__main__':
     #args_list2 = args_list2 + ["pgate --L 800 --d 600 --times 5000 --check 400 --batch 1000 --p {} --procs_sim 1 --batch_procs 54".format(_p) for _p in p_list[:4] + p_list[-4:]]
     main(args_list2)
 
-    #args_list3 = ["q --L 30 --d 26 --times 200 --check 200 --p {} --file True".format(_p) for _p in p_list]
-    #main(args_list3)
+    args_list3 = ["q --L 30 --d 26 --times 200 --check 300 --p {} --file True".format(_p) for _p in p_list]
+    main(args_list3)
     
