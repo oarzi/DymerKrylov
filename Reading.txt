@@ -11,14 +11,42 @@ Additional:
 3. Solution of the Dimer Problem by the Transfer Matrix Method
 Elliott H. Lieb
 
+Derivatino of the partition function of the dimer-monomer system using a trasnfer matrix.	
+
 4. Statistical Mechanics of Dimers on a Plane Lattice
 MICHAEL K. FISHER
 
 And - Statistical Mechanics of Dimers on a Plane Lattice. II. Dimer Correlations and Monomers
 MICHAEL E. FISHER, JOHN STEPHENSON
-
+They show how to calculate the number of configurations of a dimer lattice containing a pair of monomers (or holes) a fixed distance apart.
 
 5. Short-ranged resonating valence bond physics, quantum dimer models, and Ising gauge theories
 R. Moessner, S. L. Sondhi, Eduardo Fradkin
 
 Includes the height-field Hamiltonian from Michael's notes.
+
+6. Exact solution of the 2d dimer model: Corner free energy, correlation functions and combinatorics.
+Nicolas Allegra
+
+7. Paving the Chessboard
+J. H. AHRENS
+
+REcurence formula for dimer-monomer coverings.
+
+8. Dimers on a Rectangular Lattice 
+R. J. Baxter
+
+9. Topology-driven phase transitions in the classical monomer-dimer-loop model
+Sazi Li, Wei Li, and Ziyu Chen
+
+A study of a dimer-monomer system with discussion about partition function as a tnesr network.
+
+10. Spectral Functions and Exact Solutions in a Quantum Dimer Model for Pseudogap Metals
+Johannes Feldmeier (MSc. thesis)
+
+A good source to learn abour calculation of correlation functions in dimer models.
+
+11. Pocket Monte Carlo algorithm for classical doped dimer models
+Krauth, Moesnner.
+
+Presents a cluster Monte Carlo algorithm for correlation of monomers.

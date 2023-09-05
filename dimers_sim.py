@@ -37,7 +37,7 @@ class Simulator:
     
     def __post_init__(self):
         if not self.file_name:
-            self.file_name = 'analysis_L{}_d{}_t{}___'.format(self.L, self.d, self.check_interval*self.times)
+            self.file_name = 'analysis_L{}_d{}_p{}_t{}___'.format(self.L, self.d, self.prob, self.check_interval*self.times)
         self.psis_path = self.dir_name[:-1] + "psis/" + self.file_name + "_psi.pickle"
     
     def progress_bar(self, iterable):
@@ -102,10 +102,11 @@ class Simulator:
                 print("psi loaded from file {}".format(self.psis_path))
             rho = dimers_analysis.Analysis.load(self.dir_name + self.file_name + ".pickle").rho
         else:
-            psi = [dimers_util.get_initial_config_point(self.L, self.d, self.batch)]*self.batch_procs_num
+            psi = [dimers_util.get_initial_config_point(self.L, self.d, self.batch) for i in range(self.batch_procs_num)]
             rho = np.mean(dimers_util.defect_density_point(psi[0]), axis=0).reshape((1, self.L))
             
         print(rho.shape)
+        print(len(psi), psi[0].shape)
         return rho, psi
     
     
@@ -124,7 +125,7 @@ class Simulator:
         H = self.get_H()
         rho, psi = self.initialize()
         
-        analysis = dimers_analysis.Analysis(L=self.L, times=self.check_interval*self.times, d=self.d, batch=self.batch*batch_procs_num,
+        analysis = dimers_analysis.Analysis(L=self.L, times=self.check_interval*self.times, d=self.d, batch=self.batch*self.batch_procs_num,
                                             p=self.prob, rho=rho, psis=[], file_name = self.file_name, 
                                             dir_name=self.dir_name)
 
@@ -164,7 +165,7 @@ class Simulator:
     def classical_evolutions_batch_points(self, psi, rho, H_ring, H_hop):
         
         for i in range(self.times):
-            psi = dimers_util.promote_psi_classical(psi, H_ring, H_hop, self.prob)
+            psi = dimers_util.promote_psi_classical2(psi, H_hop, self.prob)
             charge = dimers_util.defect_density_point(psi)
             rho = np.vstack((rho, np.mean(charge, axis=0)))
 
@@ -184,6 +185,7 @@ class QuantumSimulator(Simulator):
             rho = np.array([dimers_util.defect_density_points_quantum(configs,psi)])
             
         print(rho.shape)
+        print(psi.shape)
         return rho, psi
     
     def get_H(self):

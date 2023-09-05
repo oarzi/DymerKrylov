@@ -29,3 +29,14 @@ __pycache__/dimers_analysis.cpython-39.pyc
 __pycache__/dimers_sim.cpython-311.pyc
 __pycache__/dimers_util.cpython-311.pyc
 *.pyc
+*.pyc
+det_bal/detbal2_L10_d8_size1000_p0.5.png
+det_bal/detbal2_L5_d4_size1000_p0.5.png
+det_bal/detbal3_L10_d8_size1000_p0.5.png
+det_bal/detbal3_L16_d12_size1000_p0.5.png
+det_bal/detbal3_L16_d12_size1500_p0.5.png
+det_bal/detbal3_L5_d4_size1000_p0.5.png
+det_bal/detbal_L10_d8_size1000_p0.5.png
+det_bal/phi_minus_2_scaling.png
+det_bal/quantum_p0.94.png
+L800_collapsed.png
