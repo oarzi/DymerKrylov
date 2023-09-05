@@ -36,7 +36,7 @@ def split_files(dir_path, before_fac=0.1, after_fac=0.85):
             del ana_before
             print("before saved")
 
-            L_after = 1 + int(0.2*ana.rho.shape[1])
+            L_after = 1 + int(0.15*ana.rho.shape[1])
             T_after = int(after_fac*ana.rho.shape[0])
             try:
                 ana_after = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
@@ -52,8 +52,8 @@ def split_files(dir_path, before_fac=0.1, after_fac=0.85):
                 pass
                 
 if __name__ == '__main__':
-    dir_path400 = 'analyses/varying_p/L350_d300'
-    dir_path800 = 'analyses/varying_p/L650_d600'
+    dir_path400 = 'analyses/varying_p/L300_d300'
+    dir_path800 = 'analyses/varying_p/L800```````_d600'
     
-    split_files(dir_path400, after_fac=0.8)
-    split_files(dir_path800, after_fac=0.8)
+    split_files(dir_path400, after_fac=0.75)
+    split_files(dir_path800, after_fac=0.75)
