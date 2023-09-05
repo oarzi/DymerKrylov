@@ -106,6 +106,7 @@ class Simulator:
             rho = np.mean(dimers_util.defect_density_point(psi[0]), axis=0).reshape((1, self.L))
             
         print(rho.shape)
+        print(len(psi), psi[0].shape)
         return rho, psi
     
     
@@ -184,6 +185,7 @@ class QuantumSimulator(Simulator):
             rho = np.array([dimers_util.defect_density_points_quantum(configs,psi)])
             
         print(rho.shape)
+        print(psi.shape)
         return rho, psi
     
     def get_H(self):

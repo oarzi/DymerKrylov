@@ -96,7 +96,7 @@ class Analysis:
         sites = np.arange(1, self.rho.shape[1]).reshape(1, self.rho.shape[1] - 1)
         weigths_avg = np.repeat(sites, self.rho.shape[0], axis=0)
         self.analysis['Mean'] = np.average(weigths_avg, axis=1,
-                                           weights=self.rho[:, 1:].mean(axis=0))
+                                           weights=self.rho[:, 1:])
         
         self.analysis['std'] = np.sqrt(np.average((np.repeat(sites, self.rho.shape[0], axis=0) -  
                                                    self.analysis['Mean'].reshape(self.rho.shape[0], 1))**2 , axis=1,
