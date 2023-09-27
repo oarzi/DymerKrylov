@@ -188,7 +188,7 @@ def promote_psi_classical(psi, H_ring, H_hop, prob_hop, wait = 5):
         
     return psi
 
-def promote_psi_classical2(psi, H_hop, prob_hop, wait=10):
+def promote_psi_classical2(psi, H_hop, prob_hop, wait=5):
     for j in range(wait):
         rng = np.random.default_rng()
         charge = defect_density_point(psi)
@@ -434,7 +434,7 @@ def check_detailed_balance3(L, times, d, gate, prob_hop=0.5, interval=10, size=1
     
     return states, state_vars, mean_rho
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def update_worm(new_psi, where_hop, rng):
     row_curr = rng.integers(0, 2)
     if row_curr == 0:
