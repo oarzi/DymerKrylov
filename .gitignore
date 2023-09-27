@@ -40,3 +40,5 @@ det_bal/detbal_L10_d8_size1000_p0.5.png
 det_bal/phi_minus_2_scaling.png
 det_bal/quantum_p0.94.png
 L800_collapsed.png
+*.pyc
+*.png

@@ -437,25 +437,23 @@ def check_detailed_balance3(L, times, d, gate, prob_hop=0.5, interval=10, size=1
 @jit(nopython=True)
 def update_worm(new_psi, where_hop, rng):
     row_curr = rng.integers(0, 2)
-    if row_curr == 0:
-        return new_psi
-    row_curr = rng.integers(0, 2)
-    # row_curr = 0 
+    # if row_curr == 0:
+    #     return new_psi
     plaq_curr = rng.integers(where_hop + 2, new_psi.size//3)
     plaq0, row0 = plaq_curr, row_curr
     
     def get_dimer_idx(plaq, row, where_hop, psi_size):
         dimer_idx= [3*(plaq-1)+1, 3*plaq, 3*plaq+1] if row == 0 else [3*(plaq-1)+2, 3*plaq, 3*plaq+2]
-        if plaq == where_hop +2:
-            dimer_idx = dimer_idx[1:]
+        if plaq == where_hop + 2:
+            return dimer_idx[1:]
         elif plaq == psi_size//3 - 1:
-            dimer_idx = dimer_idx[:-1]
+            return dimer_idx[:-1]
         
         return dimer_idx
     
     def update_loc(plaq, row, idx):
         if idx > 3*plaq:     
-            plaq = plaq+1
+            plaq = plaq + 1
         elif idx < 3*plaq:
             plaq = plaq - 1
         else:
@@ -476,7 +474,7 @@ def update_worm(new_psi, where_hop, rng):
         
         # Add Dimer
         dimer_idx = get_dimer_idx(plaq_curr, row_curr, where_hop, new_psi.size)
-        dimer_idx.remove(remove_idx)
+        # dimer_idx.remove(remove_idx)
         insert_idx = dimer_idx[rng.integers(0, len(dimer_idx))]
         new_psi[insert_idx] = 1 - new_psi[insert_idx]
         plaq_curr, row_curr = update_loc(plaq_curr, row_curr, insert_idx)

@@ -26,7 +26,7 @@ def split_files(dir_path, before_fac=0.1, after_fac=0.85):
             #del ana_small
             #print("small saved")
             
-            T_before = min(int(before_fac*ana.rho.shape[0]), 15000)
+            T_before = min(int(before_fac*ana.rho.shape[0]), 20000)
             ana_before = dimers_analysis.Analysis(L=ana.L, times=ana.times, d=ana.d, batch=ana.batch,
                                                   p=ana.p, rho=ana.rho[:T_before], psis=[],
                                                   file_name = ana.file_name + "before",
@@ -52,8 +52,6 @@ def split_files(dir_path, before_fac=0.1, after_fac=0.85):
                 pass
                 
 if __name__ == '__main__':
-    dir_path400 = 'analyses/varying_p/L300_d300'
-    dir_path800 = 'analyses/varying_p/L800```````_d600'
+    dir_path1200 = 'analyses/varying_p/L1200'
     
-    split_files(dir_path400, after_fac=0.75)
-    split_files(dir_path800, after_fac=0.75)
+    split_files(dir_path1200)
