@@ -174,7 +174,8 @@ class Simulator:
 @dataclass
 class QuantumSimulator(Simulator):
     
-    H : bool
+    H : bool = True
+    dt : float = 0.1
     
     def initialize(self):
         if self.from_file and os.path.isfile(self.psis_path):
@@ -201,13 +202,13 @@ class QuantumSimulator(Simulator):
     def get_U(self):
         if self.H:
             def U_hamiltonian(H_ring, H_hop, psi):
-                psi = expm_multiply(-1j*((1 - self.prob)*H_ring + self.prob*H_hop) , psi)
+                psi = expm_multiply(-1j*self.dt*((1 - self.prob)*H_ring + self.prob*H_hop) , psi)
                 return psi
             U = U_hamiltonian
         else:
             def U_floquet(H_ring, H_hop, psi):
-                psi = expm_multiply(-1j*(1 - self.prob)*H_ring, psi)
-                psi = expm_multiply(-1j*self.prob*H_hop, psi)
+                psi = expm_multiply(-1j*self.dt*(1 - self.prob)*H_ring, psi)
+                psi = expm_multiply(-1j*self.dt*self.prob*H_hop, psi)
                 return psi
             U = U_floquet
         return U
@@ -251,6 +252,8 @@ def get_experiment_args():
     
     parser_quantum.add_argument("--H", help="Floquet or full Hamiltonian evolution",
                                            type=bool, nargs=1)
+    parser_quantum.add_argument("--dt", help="time interval", type=float, nargs='1', default=[0.1])
+    
     
     
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
