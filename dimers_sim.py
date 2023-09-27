@@ -173,6 +173,9 @@ class Simulator:
     
 @dataclass
 class QuantumSimulator(Simulator):
+    
+    H : bool
+    
     def initialize(self):
         if self.from_file and os.path.isfile(self.psis_path):
             with lzma.open(self.psis_path, 'rb') as f:
@@ -195,13 +198,28 @@ class QuantumSimulator(Simulator):
         
         return (H_ring, H_hop, configs)
     
+    def get_U(self):
+        if self.H:
+            def U_hamiltonian(H_ring, H_hop, psi):
+                psi = expm_multiply(-1j*((1 - self.prob)*H_ring + self.prob*H_hop) , psi)
+                return psi
+            U = U_hamiltonian
+        else:
+            def U_floquet(H_ring, H_hop, psi):
+                psi = expm_multiply(-1j*(1 - self.prob)*H_ring, psi)
+                psi = expm_multiply(-1j*self.prob*H_hop, psi)
+                return psi
+            U = U_floquet
+        return U
+    
     def simulation_iteration(self, rho, psi, H):
 
         H_ring, H_hop, configs = H
+        
+        U = self.get_U()
 
         for i in range(self.times):
-            psi = expm_multiply(-1j*(1 - self.prob)*H_ring, psi)
-            psi = expm_multiply(-1j*self.prob*H_hop, psi)
+            psi = U(H_ring, H_hop, psi)
             rho = np.vstack((rho, dimers_util.defect_density_points_quantum(configs,psi)))
             
         return rho, psi
@@ -221,7 +239,7 @@ def get_experiment_args():
                                            nargs='+', required=False, default=[1])
     parser_quantum.add_argument("--p", help="Probability for hoping gate", type=float, nargs='+', default=[0.5])
     parser_quantum.add_argument("--d", help="Defect's inital location.", type=int, nargs=1, required=True)
-
+    
     parser_quantum.add_argument("--name", help="File prefix",
                                            type=str, nargs='+', default='q_')
     parser_quantum.add_argument("--procs_sim", help="Number of simultaneously running experiments", type=int, required=False,
@@ -230,6 +248,9 @@ def get_experiment_args():
                                            type=int, nargs='+', default=[1])
     parser_quantum.add_argument("--file", help="load from file",
                                            type=bool, nargs=1, default=False)
+    
+    parser_quantum.add_argument("--H", help="Floquet or full Hamiltonian evolution",
+                                           type=bool, nargs=1)
     
     
     parser_varying_batch_size = subparsers.add_parser('bs', help='Varying batch size experiment', allow_abbrev=False)
